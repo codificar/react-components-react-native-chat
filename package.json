@@ -9,7 +9,7 @@
 
     "repository": {
       "type": "git",
-      "url": "git+https://git.codificar.com.br/react-components/react-native-finance"
+      "url": "git+https://git.codificar.com.br/react-components/react-native-chat"
     },
     
     "peerDependencies": {
@@ -19,8 +19,8 @@
     "author": "Codificar",
 
     "bugs": {
-      "url": "https://git.codificar.com.br/react-components/react-native-finance/issues"
+      "url": "https://git.codificar.com.br/react-components/react-native-chat/issues"
     },
 
-    "homepage": "https://git.codificar.com.br/react-components/react-native-finance#readme"
+    "homepage": "https://git.codificar.com.br/react-components/react-native-chat#readme"
   }
