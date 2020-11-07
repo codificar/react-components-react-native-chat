@@ -5,10 +5,11 @@ import {
     View, 
     Dimensions, 
     TouchableOpacity,
-    StyleSheet
+    StyleSheet,
+    Image
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
 
+const arrow = require('react-native-chat/src/img/left-arrow.png');
 const { width } = Dimensions.get('window');
 const statusbarHeight = getStatusBarHeight(true);
 
@@ -33,7 +34,10 @@ class ToolBar extends Component {
                         style={{ width: 60 }} 
                         onPress={() => this.handlePress()}w
                     >
-                        <Icon name="arrow-left" size={25} color="#222" />
+                        <Image 
+                            style={styles.img}
+                            source={arrow}
+                        />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -86,9 +90,8 @@ const styles = StyleSheet.create({
         borderWidth: 4
     },
     img: {
-        height: 60,
-        width: 60,
-
+        height: 35,
+        width: 35
     },
 
 });

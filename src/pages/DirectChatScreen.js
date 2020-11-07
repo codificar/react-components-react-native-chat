@@ -5,12 +5,13 @@ import {
     Bubble,
     MessageText
 } from 'react-native-gifted-chat';
-import { View, StyleSheet, BackHandler } from 'react-native';
+import { View, StyleSheet, BackHandler, Image } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { getMessageDirectChat, sendMessageDirectChat } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
-import Icon from 'react-native-vector-icons/Ionicons';
+
+const send = require('react-native-chat/src/img/send.png');
 
 class DirectChatScreen extends Component {
     constructor(props) {
@@ -224,7 +225,10 @@ class DirectChatScreen extends Component {
         return (
             <Send {...props}>
                 <View style={styles.contImg}>
-                    <Icon name="ios-send" size={30} color='#687a95' />
+                    <Image 
+                        style={styles.send}
+                        source={send} 
+                    />
                 </View>
             </Send>
         );
@@ -278,11 +282,19 @@ const styles = StyleSheet.create({
         elevation: 5,
         marginTop: 10,
     },
-        contImg: {
+    contImg: {
         marginRight: 15,
-        marginBottom: 5,
+        marginBottom: 6,
         textTransform: 'uppercase',
+        width: 30,
+        height: 30,
+        justifyContent: "center",
+        alignItems: "center"
     },
+    send: {
+        width: 25,
+        height: 25
+    }
 });
 
 export default withNavigation(DirectChatScreen);
