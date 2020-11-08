@@ -3,10 +3,12 @@ import {
     View, 
     Text, 
     TouchableOpacity,
-    StyleSheet
+    StyleSheet,
+    Image
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import { withNavigation } from 'react-navigation';
+
+const icon = require('react-native-chat/src/img/chat.png');
 
 class HelpButton extends Component {
     constructor(props) {
@@ -34,9 +36,10 @@ class HelpButton extends Component {
                         request_id: this.props.request_id
                     })}
                 >
-                    <Text>
-                        <Icon name="chat" size={25} color="#000" />
-                    </Text>
+                    <Image 
+                        style={styles.img}
+                        source={icon}
+                    />
                 </TouchableOpacity>
             </View>
         );
@@ -52,6 +55,10 @@ const styles = StyleSheet.create({
         borderRadius: 50,
         alignItems: 'center',
         justifyContent: 'center'
+    },
+    img: {
+        height: 22,
+        width: 22
     }
 });
 

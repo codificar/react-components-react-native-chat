@@ -90,8 +90,8 @@ const styles = StyleSheet.create({
         borderWidth: 4
     },
     img: {
-        height: 35,
-        width: 35
+        height: 30,
+        width: 30
     },
 
 });
