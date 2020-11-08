@@ -3,13 +3,15 @@ import {
     View,
     TouchableOpacity,
     StyleSheet,
-    Vibration
+    Vibration,
+    Image
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import { withNavigation } from 'react-navigation';
 import { getConversation } from '../services/api';
 import WebSocketServer from "../services/socket";
 import Badger from './Badger';
+
+const icon = require('react-native-chat/src/img/chat.png');
 
 class RideButton extends Component {
     constructor(props) {
@@ -148,7 +150,10 @@ class RideButton extends Component {
                                 left: -8,
                                 zIndex: 999
                             }} />
-                        <Icon name="chat" size={25} color={"#000"} />
+                        <Image 
+                            style={styles.img}
+                            source={icon}
+                        />
                     </View>
                 </TouchableOpacity>
             </View>
@@ -169,12 +174,16 @@ const styles = StyleSheet.create({
     iconCallUser: {
         backgroundColor: '#F5F5F5',
         borderRadius: 50,
-        height: 35,
-        width: 35,
+        height: 45,
+        width: 45,
         top: -10,
         alignItems: 'center',
         justifyContent: 'center'
-      }
+    },
+    img: {
+        height: 22,
+        width: 22
+    }
 });
 
 export default withNavigation(RideButton);

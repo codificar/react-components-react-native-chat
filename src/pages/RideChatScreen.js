@@ -4,10 +4,10 @@ import {
     TouchableOpacity, 
     BackHandler, 
     Vibration,
-    StyleSheet
+    StyleSheet,
+    Image
 } from 'react-native';
 import Toolbar from '../components/ToolBar';
-import Icon from 'react-native-vector-icons/Ionicons';
 import { 
     GiftedChat, 
     Send, 
@@ -21,6 +21,7 @@ import { getMessageChat, seeMessage, sendMessage } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
 
+const send = require('react-native-chat/src/img/send.png');
 var color = '#FBFBFB';
 
 class RideChatScreen extends Component {
@@ -286,7 +287,10 @@ class RideChatScreen extends Component {
         if (props.text.trim()) { // text box filled
             return <Send {...props}>
                 <View style={styles.contImg}>
-                    <Icon name="ios-send" size={30} color={this.state.color} />
+                    <Image 
+                        style={styles.send}
+                        source={send} 
+                    />
                 </View>
             </Send>
         }
@@ -423,7 +427,16 @@ const styles = StyleSheet.create({
     },
     contImg: {
         marginRight: 15,
-        marginBottom: 5,
+        marginBottom: 6,
+        textTransform: 'uppercase',
+        width: 30,
+        height: 30,
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    send: {
+        width: 25,
+        height: 25
     },
     leftBubble: {
         marginLeft: -30,
