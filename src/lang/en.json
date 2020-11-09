@@ -1,0 +1,8 @@
+{
+    "directs": "Conversations",
+    "new_direct": "New conversation",
+    "send_message": "Send a message",
+    "providers": "Providers",
+    "search_providers": "Search providers",
+    "no_directs": "No conversations yet..."
+}

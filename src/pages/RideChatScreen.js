@@ -20,6 +20,7 @@ import {
 import { getMessageChat, seeMessage, sendMessage } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
+import strings from '../lang/strings';
 
 const send = require('react-native-chat/src/img/send.png');
 var color = '#FBFBFB';
@@ -394,7 +395,7 @@ class RideChatScreen extends Component {
                 </View>
                 <GiftedChat
                     messages={this.state.messages}
-                    placeholder='Digite sua mensagem'
+                    placeholder={strings.send_message}
                     locale='pt'
                     dateFormat='L'
                     onSend={messages => this.onSend(messages)}

@@ -11,6 +11,7 @@ import { withNavigation } from 'react-navigation';
 import { listProvidersForConversation } from '../services/api';
 import Toolbar from '../components/ToolBar';
 import { TextInput } from 'react-native-gesture-handler';
+import strings from '../lang/strings';
 
 class ListProvidersForConversation extends Component {
     constructor(props) {
@@ -56,14 +57,16 @@ class ListProvidersForConversation extends Component {
             <View style={styles.container}>
                 <View>
                     <Toolbar />
-                    <Text style={styles.title}>Prestadores</Text>
+                    <Text style={styles.title}>
+                        {strings.providers}
+                    </Text>
                 </View>
                 <TextInput
                     style={styles.input}
-                    placeholder='Procurar prestador'
+                    placeholder={strings.search_providers}
                     onChangeText={name => this.handleName(name)}
                 />
-                <View>
+                <View style={{ flex: 1 }}>
                     <FlatList 
                         data={this.state.providers}
                         keyExtractor={(x, i) => i.toString()}

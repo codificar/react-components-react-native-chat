@@ -10,6 +10,7 @@ import Toolbar from '../components/ToolBar';
 import { getMessageHelpChat, sendMessageHelpChat } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
+import strings from '../lang/strings';
 
 const send = require('react-native-chat/src/img/send.png');
 
@@ -247,7 +248,7 @@ class HelpChatScreen extends Component {
                 </View>
                 <GiftedChat
                     messages={this.state.messages}
-                    placeholder={'Nova mensagem'}
+                    placeholder={strings.send_message}
                     locale="pt"
                     onSend={messages => this.onSend(messages)}
                     user={{ _id: this.state.ledger_id }}
