@@ -90,50 +90,52 @@ class RideChatScreen extends Component {
         this.setState({ isLoading: true })
         
         if (this.state.conversation_id) {
-            getMessageChat(
-                this.state.url,
-                this.state.id,
-                this.state.token,
-                this.state.conversation_id
-            ).then(response => {
-                    let responseJson = response.data
-                    console.log('response chat messages: ', response)
-                    this.unsubscribeSocketNewConversation()
+            try {
+                const response = await getMessageChat(
+                    this.state.url,
+                    this.state.id,
+                    this.state.token,
+                    this.state.conversation_id
+                );
 
-                    this.subscribeSocket();//subscribe socket new conversation
-                    if (responseJson.success) {
-                        let formattedArrayMessages = responseJson.messages
-                        this.setState({
-                            userLedgeId: responseJson.user_ledger_id,
-                            requestId: responseJson.request_id
-                        })
-                        if (formattedArrayMessages.length > 0) {
-                            this.setState({ lastIdMessage: formattedArrayMessages[formattedArrayMessages.length - 1].id })
-                            let finalArrayMessages = []
-                            for (let i = 0; i < formattedArrayMessages.length; i++) {
-                                finalArrayMessages.unshift({
-                                    _id: formattedArrayMessages[i].id,
-                                    createdAt: formattedArrayMessages[i].created_at,
-                                    text: formattedArrayMessages[i].message,
-                                    user: { _id: formattedArrayMessages[i].user_id }
-                                })
-                            }
-                            this.setState({ messages: finalArrayMessages })
+                console.log('response chat messages: ', response)
+                let responseJson = response.data
+                this.unsubscribeSocketNewConversation()
+
+                this.subscribeSocket();//subscribe socket new conversation
+                if (responseJson.success) {
+                    let formattedArrayMessages = responseJson.messages
+                    this.setState({
+                        userLedgeId: responseJson.user_ledger_id,
+                        requestId: responseJson.request_id
+                    })
+                    if (formattedArrayMessages.length > 0) {
+                        this.setState({ lastIdMessage: formattedArrayMessages[formattedArrayMessages.length - 1].id })
+                        let finalArrayMessages = []
+                        for (let i = 0; i < formattedArrayMessages.length; i++) {
+                            finalArrayMessages.unshift({
+                                _id: formattedArrayMessages[i].id,
+                                createdAt: formattedArrayMessages[i].created_at,
+                                text: formattedArrayMessages[i].message,
+                                user: { _id: formattedArrayMessages[i].user_id }
+                            })
                         }
-                        this.setState({ isLoading: false })
-
-                        if (formattedArrayMessages[formattedArrayMessages.length - 1].is_seen == 0) {
-                            this.seeMessage()
-                        }
-
-                    } else {
-                        this.setState({ isLoading: false })
-
+                        this.setState({ messages: finalArrayMessages })
                     }
-                }).catch(error => {
-                    this.setState({ isLoading: false });
-                    console.log(error);
-                })
+                    this.setState({ isLoading: false })
+
+                    if (formattedArrayMessages[formattedArrayMessages.length - 1].is_seen == 0) {
+                        this.seeMessage()
+                    }
+
+                } else {
+                    this.setState({ isLoading: false })
+                }
+            } catch (error) {
+                this.setState({ isLoading: false });
+                console.log(error);
+            }
+            
         } else {
             console.log('Nao tem conversa salva')
 
@@ -202,17 +204,23 @@ class RideChatScreen extends Component {
                     _id: data.message.id,
                     createdAt: data.message.created_at,
                     text: data.message.message,
+                    sent: true,
+                    received: false,
                     user: { _id: data.message.user_id }
                 }
-                console.log('newMessage: ', newMessage)
-                console.log('this.state.messages[this.state.messages.length - 1]._id : ', this.state.messages[this.state.messages.length - 1]._id)
+                console.log('newMessage: ', newMessage);
 
-                if (newMessage._id !== this.state.messages[this.state.messages.length - 1]._id && data.message.user_id !== this.props.ledger) {
-
-                    this.setState(previousState => ({
-                        messages: GiftedChat.append(previousState.messages, newMessage),
-                    }))
-                }
+                this.setState(state => {
+                    if (
+                        newMessage._id !==
+                        state.messages[state.messages.length - 1]._id &&
+                        data.message.user_id !== this.state.userLedgeId
+                    ) {
+                        return {
+                            messages: GiftedChat.append(state.messages, newMessage),
+                        };
+                    }
+                });
 
                 this.setState({ lastIdMessage: data.message.id });
                 if (data.message.is_seen == 0 && data.message.user_id !== this.props.ledger) {
@@ -270,10 +278,14 @@ class RideChatScreen extends Component {
                             conversation_id: responseJson.conversation_id
                         });
                         this.unsubscribeSocketNewConversation()
-                        this.subscribeSocket()
+                        this.getConversation();
                     }
                 }
             }
+
+            this.setState(previousState => ({
+                messages: GiftedChat.append(previousState.messages, messages),
+            }));
         } catch (error) {
             console.log("error send:", error)
         }

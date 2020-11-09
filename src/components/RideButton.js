@@ -26,9 +26,10 @@ class RideButton extends Component {
         this.socket = WebSocketServer.connect(this.props.socket_url);
 
         this.willFocus = this.props.navigation.addListener("willFocus", () => {
-			this.getConversation();
-			this.subscribeSocketNewConversation(this.props.request_id)
-
+            setTimeout(() => {
+                this.getConversation();
+			    this.subscribeSocketNewConversation(this.props.request_id)
+            }, 500);
         });
 
         this.willBlur = this.props.navigation.addListener("willBlur", () => {
@@ -123,23 +124,27 @@ class RideButton extends Component {
 		} catch (error) {
 			console.log('Erro getConversation:', error)
 		}
-	}
+    }
+    
+    navigateTo() {
+        this.props.navigation.navigate('RideChatScreen', {
+            receiveID: this.state.receiveID,
+            conversation_id: this.state.conversation_id,
+            url: this.props.url,
+            socket_url: this.props.socket_url,
+            id: this.props.id,
+            token: this.props.token,
+            requestId: this.props.request_id,
+            color: this.props.color
+        })
+    }
 
     render() {
         return (
             <View>
                 <TouchableOpacity
                     style={styles.iconCallUser}
-                    onPress={() => this.props.navigation.navigate('RideChatScreen', {
-                        receiveID: this.state.receiveID,
-                        conversation_id: this.state.conversation_id,
-                        url: this.props.url,
-                        socket_url: this.props.socket_url,
-                        id: this.props.id,
-                        token: this.props.token,
-                        requestId: this.props.request_id,
-                        color: this.props.color
-                    })}
+                    onPress={() => this.navigateTo()}
                     activeOpacity={0.6}
                 >
                     <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
