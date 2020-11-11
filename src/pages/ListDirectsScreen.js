@@ -24,6 +24,7 @@ class ListDirectsScreen extends Component {
             socket_url: this.props.navigation.state.params.socket_url,
             id: this.props.navigation.state.params.id,
             token: this.props.navigation.state.params.token,
+            app_type: this.props.navigation.state.params.app_type,
             conversations: []
         }
 
@@ -71,22 +72,27 @@ class ListDirectsScreen extends Component {
                     <Toolbar />
                     <Text style={styles.title}>{strings.directs}</Text>
                 </View>
-                <View
-                    style={styles.box_new}
-                >
-                    <TouchableOpacity
-                        onPress={() => this.props.navigation.navigate('ListProvidersForConversation', {
-                            url: this.state.url,
-                            socket_url: this.state.socket_url,
-                            id: this.state.id,
-                            token: this.state.token
-                        })}
+
+                {
+                    this.state.app_type == 'user' &&
+                    <View
+                        style={styles.box_new}
                     >
-                        <Text style={styles.box_new_txt}>
-                            {strings.new_direct}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
+                        <TouchableOpacity
+                            onPress={() => this.props.navigation.navigate('ListProvidersForConversation', {
+                                url: this.state.url,
+                                socket_url: this.state.socket_url,
+                                id: this.state.id,
+                                token: this.state.token
+                            })}
+                        >
+                            <Text style={styles.box_new_txt}>
+                                {strings.new_direct}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                }
+                
                 <View style={{ flex: 1 }}>
                     {
                         this.state.conversations.length > 0 
@@ -109,9 +115,26 @@ class ListDirectsScreen extends Component {
                                             style={styles.img}
                                             source={{ uri: item.picture }}
                                         />
-                                        <Text style={styles.row_txt} numberOfLines={1}>
-                                            {item.first_name + ' ' + item.last_name}
-                                        </Text>
+
+                                        <View
+                                            style={{
+                                                flex: 1
+                                            }}
+                                        >
+                                            <Text
+                                                style={{
+                                                    textAlign: 'right'
+                                                }}
+                                            >{item.time}</Text>
+                                            <Text style={styles.row_txt} numberOfLines={1}>
+                                                {item.first_name + ' ' + item.last_name}
+                                            </Text>
+                                            <Text
+                                                numberOfLines={1}
+                                            >
+                                                {item.last_message}
+                                            </Text>
+                                        </View>
                                     </View>
                                 </TouchableOpacity>
                             )}
@@ -162,7 +185,8 @@ const styles = StyleSheet.create({
         margin: 5
     },
     row_txt: {
-        fontSize: 16
+        fontSize: 16,
+        fontWeight: 'bold'
     },
     box_new: {
         marginBottom: 15
