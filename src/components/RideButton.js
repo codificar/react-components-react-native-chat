@@ -33,14 +33,15 @@ class RideButton extends Component {
         });
 
         this.willBlur = this.props.navigation.addListener("willBlur", () => {
+            
 			this.unsubscribeSocket();
 			this.unsubscribeSocketNewConversation();
-
 		});
     }
 
     componentDidMount() {
-        
+        this.getConversation();
+        this.subscribeSocketNewConversation(this.props.request_id);
     }
 
     subscribeSocketConversation(id) {
@@ -48,15 +49,11 @@ class RideButton extends Component {
 		this.socket
 			.emit("subscribe", { channel: "conversation." + id })
 			.on("newMessage", (channel, data) => {
-				console.log('subscribeSocketConversation:', data)
 
 				this.playSoundRequest();
-				
                 this.setState({
                     contNewMensag: this.state.contNewMensag + 1
                 });
-
-                console.log(this.state.contNewMensag);
 			})
 	}
 
@@ -104,32 +101,55 @@ class RideButton extends Component {
 
     async getConversation() {
 		try {
-			const response = await getConversation(
-                this.props.url,
-                this.props.id,
-                this.props.token,
-                this.props.request_id
-            );
+			const data = await this.callApiConversation();
+            console.log('getConversation', data);
 
-			var result = response.data;
-
-            this.subscribeSocketConversation(result.conversations[0].id);
+            this.subscribeSocketConversation(data.id);
             
 			this.setState({
-                receiveID: result.conversations[0].user.id,
-                conversation_id: result.conversations[0].id,
-                contNewMensag: result.conversations[0].new_messages
+                receiveID: data.user.id,
+                conversation_id: data.id,
+                contNewMensag: data.new_messages
 			})
 
 		} catch (error) {
 			console.log('Erro getConversation:', error)
 		}
     }
+
+    async callApiConversation() {
+        try {
+            const response = await getConversation(
+                this.props.url,
+                this.props.id,
+                this.props.token,
+                this.props.request_id
+            );
+
+            const { data } = response;
+
+            return data.conversations[0];
+        } catch (error) {
+            console.log('Erro callApiConversation:', error);
+
+            return {
+                id: 0
+            }
+        }
+    }
     
-    navigateTo() {
+    async navigateTo() {
+        let conversationId = this.state.conversation_id;
+
+        if (conversationId == 0) {
+            const data = await this.callApiConversation();
+            conversationId = data.id;
+            console.log('conversationId', conversationId);
+        }
+
         this.props.navigation.navigate('RideChatScreen', {
             receiveID: this.state.receiveID,
-            conversation_id: this.state.conversation_id,
+            conversation_id: conversationId,
             url: this.props.url,
             socket_url: this.props.socket_url,
             id: this.props.id,
