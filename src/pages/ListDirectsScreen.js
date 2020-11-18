@@ -12,6 +12,7 @@ import { withNavigation } from 'react-navigation';
 import { listDirectConversations } from '../services/api';
 import Toolbar from '../components/ToolBar';
 import strings from '../lang/strings';
+import PerfilImage from '../components/PerfilImage';
 
 const box_img = require('react-native-chat/src/img/box.png');
 
@@ -25,7 +26,8 @@ class ListDirectsScreen extends Component {
             id: this.props.navigation.state.params.id,
             token: this.props.navigation.state.params.token,
             app_type: this.props.navigation.state.params.app_type,
-            conversations: []
+            conversations: [],
+            show_new_conversation: false
         }
 
         this.willFocus = this.props.navigation.addListener("willFocus", () => {
@@ -74,7 +76,7 @@ class ListDirectsScreen extends Component {
                 </View>
 
                 {
-                    this.state.app_type == 'user' &&
+                    this.state.show_new_conversation &&
                     <View
                         style={styles.box_new}
                     >
@@ -111,9 +113,9 @@ class ListDirectsScreen extends Component {
                                     })}
                                 >
                                     <View style={styles.row} >
-                                        <Image
-                                            style={styles.img}
-                                            source={{ uri: item.picture }}
+                                        
+                                        <PerfilImage 
+                                            src={item.picture}
                                         />
 
                                         <View
@@ -121,14 +123,14 @@ class ListDirectsScreen extends Component {
                                                 flex: 1
                                             }}
                                         >
-                                            <Text
-                                                style={{
-                                                    textAlign: 'right'
-                                                }}
-                                            >{item.time}</Text>
+                                            <Text style={styles.timeText}>
+                                                {item.time}
+                                            </Text>
+
                                             <Text style={styles.row_txt} numberOfLines={1}>
                                                 {item.first_name + ' ' + item.last_name}
                                             </Text>
+
                                             <Text
                                                 numberOfLines={1}
                                             >
@@ -204,6 +206,10 @@ const styles = StyleSheet.create({
         width: '100%',
         justifyContent: 'center',
         alignItems: 'center'
+    },
+    timeText: {
+        textAlign: 'right',
+        fontSize: 11
     }
 });
 
