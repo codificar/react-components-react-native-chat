@@ -5,7 +5,7 @@ import {
     Bubble,
     MessageText
 } from 'react-native-gifted-chat';
-import { View, StyleSheet, BackHandler, Image } from 'react-native';
+import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { getMessageHelpChat, sendMessageHelpChat } from '../services/api';
 import { withNavigation } from 'react-navigation';
@@ -25,7 +25,8 @@ class HelpChatScreen extends Component {
             request_id: this.props.navigation.state.params.request_id,
             conversation: null,
             messages: [],
-            ledger_id: 0
+            ledger_id: 0,
+            is_refreshing: false
         }
 
         this.socket = WebSocketServer.connect(this.props.navigation.state.params.socket_url);
@@ -34,24 +35,21 @@ class HelpChatScreen extends Component {
             
             this.unsubscribeSocket();
         })
-
-        this.willFocus = this.props.navigation.addListener("willFocus", () => {
-
-            this.getMessages();
-        });
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         this.backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
             this.props.navigation.goBack();
             return true;
         });
+
+        await this.getMessages();
+        this.subscribeSocket();
     }
 
     componentWillUnmount() {
 		this.backHandler.remove();
 		this.willBlur.remove();
-		this.willFocus.remove();
 	}
 
 
@@ -102,6 +100,10 @@ class HelpChatScreen extends Component {
      * @param {String} messages
      */
     async getMessages() {
+        this.setState({
+            is_refreshing: true
+        });
+
         try {
             const response = await getMessageHelpChat(
                 this.state.url,
@@ -115,10 +117,14 @@ class HelpChatScreen extends Component {
     
             this.setState({ 
                 messages: formattedArrayMessages,
-                ledger_id: data.user_ledger_id
+                ledger_id: data.user_ledger_id,
+                is_refreshing: false
             });
-            this.subscribeSocket();
+            
         } catch (error) {
+            this.setState({
+                is_refreshing: false
+            });
             console.log(error);
         }
     }
@@ -240,6 +246,17 @@ class HelpChatScreen extends Component {
         );
     }
 
+    /**
+     * Mount RefreshControl
+     */
+    renderRefreshControl() {
+        return <RefreshControl
+            colors={['#000']}
+            refreshing={this.state.is_refreshing}
+            onRefresh={() => this.getMessages()} 
+        />
+    }
+
     render() {
         return (
             <View style={styles.container}>
@@ -255,6 +272,9 @@ class HelpChatScreen extends Component {
                     renderMessageText={this.renderMessageText}
                     renderBubble={this.renderBubble}
                     renderSend={props => this.renderSend(props)}
+                    listViewProps={{
+                        refreshControl: this.renderRefreshControl()
+                    }}
                 />
             </View>
         );

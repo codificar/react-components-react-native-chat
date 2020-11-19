@@ -5,7 +5,8 @@ import {
     BackHandler, 
     Vibration,
     StyleSheet,
-    Image
+    Image,
+    RefreshControl
 } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { 
@@ -48,7 +49,8 @@ class RideChatScreen extends Component {
             token: this.props.navigation.state.params.token,
             conversation_id: this.props.navigation.state.params.conversation_id,
             color: this.props.navigation.state.params.color,
-            contNewMensag: 0
+            contNewMensag: 0,
+            is_refreshing: false
         }
 
         color = this.props.navigation.state.params.color;
@@ -87,8 +89,8 @@ class RideChatScreen extends Component {
 		this.willFocus.remove();
 	}
 
-    async getConversation() {
-        this.setState({ isLoading: true })
+    async getConversation(refresh = false) {
+        this.setState({ isLoading: true, is_refreshing: true })
         
         if (this.state.conversation_id) {
             try {
@@ -101,9 +103,12 @@ class RideChatScreen extends Component {
 
                 console.log('response chat messages: ', response)
                 let responseJson = response.data
-                this.unsubscribeSocketNewConversation()
 
-                this.subscribeSocket();//subscribe socket new conversation
+                if (!refresh) {
+                    this.unsubscribeSocketNewConversation()
+                    this.subscribeSocket();//subscribe socket new conversation
+                }
+
                 if (responseJson.success) {
                     let formattedArrayMessages = responseJson.messages
                     this.setState({
@@ -123,17 +128,17 @@ class RideChatScreen extends Component {
                         }
                         this.setState({ messages: finalArrayMessages })
                     }
-                    this.setState({ isLoading: false })
+                    this.setState({ isLoading: false, is_refreshing: false })
 
                     if (formattedArrayMessages[formattedArrayMessages.length - 1].is_seen == 0) {
                         this.seeMessage()
                     }
 
                 } else {
-                    this.setState({ isLoading: false })
+                    this.setState({ isLoading: false, is_refreshing: false  })
                 }
             } catch (error) {
-                this.setState({ isLoading: false });
+                this.setState({ isLoading: false, is_refreshing: false  });
                 console.log(error);
             }
             
@@ -386,6 +391,17 @@ class RideChatScreen extends Component {
         )
     }
 
+    /**
+     * Mount RefreshControl
+     */
+    renderRefreshControl() {
+        return <RefreshControl
+            colors={['#000']}
+            refreshing={this.state.is_refreshing}
+            onRefresh={() => this.getConversation(true)} 
+        />
+    }
+
     render() {
 
         return (
@@ -405,8 +421,10 @@ class RideChatScreen extends Component {
                     renderBubble={this.renderBubble}
                     renderMessageText={this.renderMessageText}
                     renderTime={this.renderTime}
-
                     textInputProps={{ keyboardType: this.state.isMessageValue ? 'numeric' : 'default' }}
+                    listViewProps={{
+                        refreshControl: this.renderRefreshControl()
+                    }}
                 />
             </View>
         )

@@ -11,9 +11,17 @@ class PerfilImage extends Component {
         super(props);
 
         this.state = {
-            image: { 
-                uri: this.props.src
-            }
+            image: default_img
+        }
+    }
+
+    componentDidMount() {
+        if (this.props.src) {
+            this.setState({
+                image: { 
+                    uri: this.props.src
+                }
+            })
         }
     }
 
