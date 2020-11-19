@@ -6,7 +6,8 @@ import {
     FlatList,
     Text,
     Image,
-    BackHandler
+    BackHandler,
+    RefreshControl
 } from 'react-native';
 import { withNavigation } from 'react-navigation';
 import { listDirectConversations } from '../services/api';
@@ -27,7 +28,8 @@ class ListDirectsScreen extends Component {
             token: this.props.navigation.state.params.token,
             app_type: this.props.navigation.state.params.app_type,
             conversations: [],
-            show_new_conversation: false
+            show_new_conversation: false,
+            is_refreshing: false
         }
 
         this.willFocus = this.props.navigation.addListener("willFocus", () => {
@@ -51,6 +53,10 @@ class ListDirectsScreen extends Component {
 	}
 
     async listDirectConversations() {
+        this.setState({
+            is_refreshing: true
+        });
+
         try {
             const response = await listDirectConversations(
                 this.state.url,
@@ -60,9 +66,13 @@ class ListDirectsScreen extends Component {
 
             const { data } = response;
             this.setState({
+                is_refreshing: false,
                 conversations: data.conversations
             });
         } catch (error) {
+            this.setState({
+                is_refreshing: false
+            });
             console.log(error);
         }
     }
@@ -140,6 +150,12 @@ class ListDirectsScreen extends Component {
                                     </View>
                                 </TouchableOpacity>
                             )}
+                            refreshControl={
+                                <RefreshControl
+                                    colors={['#000']}
+                                    refreshing={this.state.is_refreshing}
+                                    onRefresh={() => this.listDirectConversations()} />
+                            }
                         />
                         :
                         <View

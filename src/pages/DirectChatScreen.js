@@ -5,7 +5,7 @@ import {
     Bubble,
     MessageText
 } from 'react-native-gifted-chat';
-import { View, StyleSheet, BackHandler, Image } from 'react-native';
+import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { getMessageDirectChat, sendMessageDirectChat } from '../services/api';
 import { withNavigation } from 'react-navigation';
@@ -25,7 +25,8 @@ class DirectChatScreen extends Component {
             receiver: this.props.navigation.state.params.receiver,
             messages: [],
             conversation: 0,
-            ledger_id: 0
+            ledger_id: 0,
+            is_refreshing: false
         }
 
         this.socket = WebSocketServer.connect(this.props.navigation.state.params.socket_url);
@@ -35,9 +36,10 @@ class DirectChatScreen extends Component {
             this.unsubscribeSocket();
         })
 
-        this.willFocus = this.props.navigation.addListener("willFocus", () => {
+        this.willFocus = this.props.navigation.addListener("willFocus", async () => {
 
-            this.getMessages();
+            await this.getMessages();
+            this.subscribeSocket();
         });
     }
 
@@ -68,6 +70,9 @@ class DirectChatScreen extends Component {
      * @param {String} messages
      */
     async getMessages() {
+        this.setState({
+            is_refreshing: true
+        });
         try {
             const response = await getMessageDirectChat(
                 this.state.url,
@@ -81,10 +86,14 @@ class DirectChatScreen extends Component {
     
             this.setState({ 
                 messages: formattedArrayMessages,
-                ledger_id: data.user_ledger_id
+                ledger_id: data.user_ledger_id,
+                is_refreshing: false
             });
-            this.subscribeSocket();
+            
         } catch (error) {
+            this.setState({
+                is_refreshing: false
+            });
             console.log(error);
         }
     }
@@ -235,6 +244,17 @@ class DirectChatScreen extends Component {
         );
     }
 
+    /**
+     * Mount RefreshControl
+     */
+    renderRefreshControl() {
+        return <RefreshControl
+            colors={['#000']}
+            refreshing={this.state.is_refreshing}
+            onRefresh={() => this.getMessages()} 
+        />
+    }
+
     render() {
         return (
             <View style={styles.container}>
@@ -250,6 +270,9 @@ class DirectChatScreen extends Component {
                     renderMessageText={this.renderMessageText}
                     renderBubble={this.renderBubble}
                     renderSend={props => this.renderSend(props)}
+                    listViewProps={{
+                        refreshControl: this.renderRefreshControl()
+                    }}
                 />
             </View>
         );
