@@ -144,8 +144,7 @@ class RideChatScreen extends Component {
             
         } else {
             console.log('Nao tem conversa salva')
-
-            this.setState({ isLoading: false })
+            this.setState({ isLoading: false, is_refreshing: false });
         }
     }
 
