@@ -58,13 +58,12 @@ class RideChatScreen extends Component {
         this.socket = WebSocketServer.connect(this.props.navigation.state.params.socket_url);
 
         this.willBlur = this.props.navigation.addListener("willBlur", () => {
-            
             this.unsubscribeSocket();
+            this.unsubscribeSocketNewConversation();
         })
 
-        this.willFocus = this.props.navigation.addListener("willFocus", () => {
-
-            this.getConversation();
+        this.willFocus = this.props.navigation.addListener("willFocus", async () => {
+            await this.getConversation();
         });
         
     }
@@ -241,7 +240,6 @@ class RideChatScreen extends Component {
                 this.socket.removeAllListeners("newConversation")
                 this.socket.removeAllListeners("newMessage")
                 this.socket.removeAllListeners("readMessage")
-                this.socket.removeAllListeners("newConversation")
                 this.socket.emit("unsubscribe", {
                     channel: "conversation." + this.state.conversation_id
                 })
@@ -288,9 +286,11 @@ class RideChatScreen extends Component {
                 }
             }
 
-            this.setState(previousState => ({
-                messages: GiftedChat.append(previousState.messages, messages),
-            }));
+            if (this.state.messages.length > 0) {
+                this.setState(previousState => ({
+                    messages: GiftedChat.append(previousState.messages, messages),
+                }));
+            }
         } catch (error) {
             console.log("error send:", error)
         }
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
         color: '#211F1F'
     },
     messageTextRight: {
-        color: '#211F1F'
+        color: '#fff'
     },
     time: {
         color: '#9aa2ab'

@@ -25,23 +25,19 @@ class RideButton extends Component {
 
         this.socket = WebSocketServer.connect(this.props.socket_url);
 
-        this.willFocus = this.props.navigation.addListener("willFocus", () => {
-            setTimeout(() => {
-                this.getConversation();
-			    this.subscribeSocketNewConversation(this.props.request_id)
-            }, 500);
+        this.willFocus = this.props.navigation.addListener("willFocus", async () => {
+            await this.getConversation();
+            this.subscribeSocketNewConversation(this.props.request_id);
         });
 
         this.willBlur = this.props.navigation.addListener("willBlur", () => {
-            
 			this.unsubscribeSocket();
 			this.unsubscribeSocketNewConversation();
 		});
     }
 
     componentDidMount() {
-        this.getConversation();
-        this.subscribeSocketNewConversation(this.props.request_id);
+        
     }
 
     subscribeSocketConversation(id) {
