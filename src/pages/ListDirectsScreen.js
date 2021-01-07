@@ -77,6 +77,27 @@ class ListDirectsScreen extends Component {
         }
     }
 
+    navigateToChatScreen(item) {
+        if (item.request_id == 0)
+            this.props.navigation.navigate('DirectChatScreen', {
+                url: this.state.url,
+                socket_url: this.state.socket_url,
+                id: this.state.id,
+                token: this.state.token,
+                receiver: item.id
+            })
+        else
+            this.props.navigation.navigate('RideChatScreen', {
+                conversation_id: item.conversation_id,
+                url: this.state.url,
+                socket_url: this.state.socket_url,
+                id: this.state.id,
+                token: this.state.token,
+                requestId: item.request_id,
+                color: '#687a95'
+            });
+    }
+
     render() {
         return (
             <View style={styles.container}>
@@ -114,13 +135,7 @@ class ListDirectsScreen extends Component {
                             keyExtractor={(x, i) => i.toString()}
                             renderItem={({ item, index }) => (
                                 <TouchableOpacity
-                                    onPress={() => this.props.navigation.navigate('DirectChatScreen', {
-                                        url: this.state.url,
-                                        socket_url: this.state.socket_url,
-                                        id: this.state.id,
-                                        token: this.state.token,
-                                        receiver: item.id
-                                    })}
+                                    onPress={() => this.navigateToChatScreen(item)}
                                 >
                                     <View style={styles.row} >
                                         
@@ -138,7 +153,7 @@ class ListDirectsScreen extends Component {
                                             </Text>
 
                                             <Text style={styles.row_txt} numberOfLines={1}>
-                                                {item.first_name + ' ' + item.last_name}
+                                                {item.full_name}
                                             </Text>
 
                                             <Text
