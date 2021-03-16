@@ -10,7 +10,13 @@ const deviceLanguage =
     : 
         NativeModules.I18nManager.localeIdentifier;
 
-if (deviceLanguage == 'en_US')
+
+if (deviceLanguage.substring(0, 2) == 'en'){
     strings = require('./en.json');
+}else if(deviceLanguage.substring(0, 2) == 'es'){
+    strings = require('./es.json');
+}
+
+
 
 export default strings;
