@@ -1,7 +1,7 @@
 {
     "directs": "Conversaciones",
     "new_direct": "Nueva conversación",
-    "send_message": "Escribe un mensaje",
+    "send_message": "Escriba Mensaje",
     "providers": "Proveedores",
     "search_providers": "Proveedores de búsqueda",
     "no_directs": "Aún no hay conversaciones..."
