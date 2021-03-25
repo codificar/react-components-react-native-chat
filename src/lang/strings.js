@@ -17,6 +17,4 @@ if (deviceLanguage.substring(0, 2) == 'en'){
     strings = require('./es.json');
 }
 
-
-
 export default strings;
