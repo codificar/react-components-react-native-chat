@@ -17,19 +17,20 @@ const send = require('react-native-chat/src/img/send.png');
 class HelpChatScreen extends Component {
     constructor(props) {
         super(props);
+        const paramRoute = this.props.navigation != undefined ? paramRoute : this.props.route.params;
 
         this.state = {
-            url: this.props.navigation.state.params.url,
-            id: this.props.navigation.state.params.id,
-            token: this.props.navigation.state.params.token,
-            request_id: this.props.navigation.state.params.request_id,
+            url: paramRoute.url,
+            id: paramRoute.id,
+            token: paramRoute.token,
+            request_id: paramRoute.request_id,
             conversation: null,
             messages: [],
             ledger_id: 0,
             is_refreshing: false
         }
 
-        this.socket = WebSocketServer.connect(this.props.navigation.state.params.socket_url);
+        this.socket = WebSocketServer.connect(paramRoute.socket_url);
 
         this.willBlur = this.props.navigation.addListener("willBlur", () => {
             

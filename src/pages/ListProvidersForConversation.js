@@ -16,12 +16,13 @@ import strings from '../lang/strings';
 class ListProvidersForConversation extends Component {
     constructor(props) {
         super(props);
+        const paramRoute = this.props.navigation.state != undefined ? this.props.navigation.state.params : this.props.route.params;
 
         this.state = {
-            url: this.props.navigation.state.params.url,
-            socket_url: this.props.navigation.state.params.socket_url,
-            id: this.props.navigation.state.params.id,
-            token: this.props.navigation.state.params.token,
+            url:paramRoute.url,
+            socket_url:paramRoute.socket_url,
+            id:paramRoute.id,
+            token:paramRoute.token,
             providers: []
         }
     }

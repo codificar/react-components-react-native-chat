@@ -15,7 +15,6 @@ import {
     Bubble, 
     MessageText, 
     Time, 
-    Composer, 
     Day 
 } from 'react-native-gifted-chat';
 import { getMessageChat, seeMessage, sendMessage } from '../services/api';
@@ -29,7 +28,7 @@ var color = '#FBFBFB';
 class RideChatScreen extends Component {
     constructor(props) {
         super(props)
-
+        const paramRoute = this.props.navigation.state != undefined ? this.props.navigation.state.params : this.props.route.params;
         this.state = {
             messages: [],
             idBotMessage: 1,
@@ -37,25 +36,25 @@ class RideChatScreen extends Component {
             valueMessage: false,
             isMessageValue: false,
             userLedgeId: '',
-            requestId: this.props.navigation.state.params.requestId,
+            requestId: paramRoute.requestId,
             isLoading: '',
-            receiveID: this.props.navigation.state.params.receiveID,
+            receiveID: paramRoute.receiveID,
             lastIdMessage: '',
             user_ledger_id: 0,
             ledger: 0,
             sound: "",
-            url: this.props.navigation.state.params.url,
-            id: this.props.navigation.state.params.id,
-            token: this.props.navigation.state.params.token,
-            conversation_id: this.props.navigation.state.params.conversation_id,
-            color: this.props.navigation.state.params.color,
+            url: paramRoute.url,
+            id: paramRoute.id,
+            token: paramRoute.token,
+            conversation_id: paramRoute.conversation_id,
+            color: paramRoute.color,
             contNewMensag: 0,
             is_refreshing: false
         }
 
-        color = this.props.navigation.state.params.color;
+        color = paramRoute.color;
 
-        this.socket = WebSocketServer.connect(this.props.navigation.state.params.socket_url);
+        this.socket = WebSocketServer.connect(paramRoute.socket_url);
 
         this.willBlur = this.props.navigation.addListener("willBlur", () => {
             
@@ -84,10 +83,15 @@ class RideChatScreen extends Component {
     }
 
     componentWillUnmount() {
-		this.backHandler.remove();
-		this.willBlur.remove();
-		this.willFocus.remove();
-	}
+        try {
+          this.backHandler.remove();
+          this.willBlur.remove();
+          this.willFocus.remove();
+        } catch (error) {
+          console.log('this.componentWillUnmount Error:', error);
+        }
+    
+      }
 
     async getConversation(refresh = false) {
         this.setState({ isLoading: true, is_refreshing: true })
@@ -375,20 +379,6 @@ class RideChatScreen extends Component {
         )
     }
 
-
-    /**
-     * Render custom buttom value
-     */
-    renderComposer = props => {
-        return (
-            <View style={{ flexDirection: 'row' }}>
-                <Composer {...props} />
-                <TouchableOpacity onPress={this.changeChatMode} style={{ position: 'absolute', right: 5, bottom: 0 }}>
-                    {/*  <Icon name='md-cash' type='ionicon' color='green' /> */}
-                </TouchableOpacity>
-            </View>
-        )
-    }
 
     /**
      * Mount RefreshControl
