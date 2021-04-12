@@ -116,6 +116,7 @@ class DirectChatScreen extends Component {
                     createdAt: formattedArrayMessages[i].created_at,
                     text: formattedArrayMessages[i].message,
                     user: { _id: formattedArrayMessages[i].user_id },
+                    image: formattedArrayMessages[i].picture ? this.state.url + '/uploads/' + formattedArrayMessages[i].picture : null
                 });
             }
 

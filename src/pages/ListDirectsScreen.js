@@ -138,7 +138,7 @@ class ListDirectsScreen extends Component {
                                             </Text>
 
                                             <Text style={styles.row_txt} numberOfLines={1}>
-                                                {item.first_name + ' ' + item.last_name}
+                                                { item.full_name }
                                             </Text>
 
                                             <Text
