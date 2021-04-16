@@ -42,6 +42,8 @@ class DirectChatScreen extends Component {
             await this.getMessages();
             this.subscribeSocket();
         });
+
+        this.getMessages();
     }
 
     componentDidMount() {

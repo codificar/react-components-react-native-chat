@@ -20,7 +20,10 @@ const box_img = require('react-native-chat/src/img/box.png');
 class ListDirectsScreen extends Component {
     constructor(props) {
         super(props);
-        const paramRoute = this.props.navigation != undefined ? paramRoute : this.props.route.params;
+        var paramRoute = this.props.navigation != undefined ? paramRoute : this.props.route.params;
+
+        if (paramRoute === undefined)
+            paramRoute = this.props.route.params;
 
         this.state = {
             url: paramRoute.url,
@@ -33,10 +36,9 @@ class ListDirectsScreen extends Component {
             is_refreshing: false
         }
 
-        this.willFocus = this.props.navigation.addListener("willFocus", () => {
-
+        /*this.willFocus = this.props.navigation.addListener("willFocus", () => {
             this.listDirectConversations();
-        });
+        });*/
     }
 
     componentDidMount() {
@@ -50,7 +52,7 @@ class ListDirectsScreen extends Component {
 
     componentWillUnmount() {
 		this.backHandler.remove();
-		this.willFocus.remove();
+		//this.willFocus.remove();
 	}
 
     async listDirectConversations() {
@@ -79,7 +81,7 @@ class ListDirectsScreen extends Component {
     }
 
     navigateToChatScreen(item) {
-        if (item.request_id == 0)
+        if (!item.request_id || item.request_id == 0)
             this.props.navigation.navigate('DirectChatScreen', {
                 url: this.state.url,
                 socket_url: this.state.socket_url,
