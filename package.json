@@ -1,25 +1,31 @@
 {
     "name": "react-native-chat",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "description": "A component for chat",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+      "test": "echo \"Error: no test specified\" && exit 1"
     },
     "license": "MIT",
+
     "repository": {
-        "type": "git",
-        "url": "git+https://git.codificar.com.br/react-components/react-native-chat"
+      "type": "git",
+      "url": "git+https://git.codificar.com.br/react-components/react-native-chat"
     },
+
     "dependencies": {
-        "react-native-gifted-chat": "^0.16.3",
-        "react-native-status-bar-height": "^2.5.0"
+      "react-native-gifted-chat": "^0.16.3",
+      "react-native-status-bar-height": "^2.5.0"
     },
+    
     "peerDependencies": {
         "react-native": ">=0.47.0"
     },
+
     "author": "Codificar",
+
     "bugs": {
-        "url": "https://git.codificar.com.br/react-components/react-native-chat/issues"
+      "url": "https://git.codificar.com.br/react-components/react-native-chat/issues"
     },
+
     "homepage": "https://git.codificar.com.br/react-components/react-native-chat#readme"
-}
+  }
