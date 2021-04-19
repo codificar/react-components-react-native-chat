@@ -105,7 +105,7 @@ class ListDirectsScreen extends Component {
         return (
             <View style={styles.container}>
                 <View>
-                    <Toolbar />
+                    <Toolbar onPress={() => this.props.navigation.goBack()}/>
                     <Text style={styles.title}>{strings.directs}</Text>
                 </View>
 
