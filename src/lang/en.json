@@ -4,5 +4,6 @@
     "send_message": "Send a message",
     "providers": "Providers",
     "search_providers": "Search providers",
-    "no_directs": "No conversations yet..."
+    "no_directs": "No conversations yet...",
+    "chat": "Chat"
 }

@@ -17,19 +17,20 @@ const send = require('react-native-chat/src/img/send.png');
 class DirectChatScreen extends Component {
     constructor(props) {
         super(props);
+        const paramRoute = this.props.navigation.state != undefined ? this.props.navigation.state.params : this.props.route.params;
 
         this.state = {
-            url: this.props.navigation.state.params.url,
-            id: this.props.navigation.state.params.id,
-            token: this.props.navigation.state.params.token,
-            receiver: this.props.navigation.state.params.receiver,
+            url: paramRoute.url,
+            id: paramRoute.id,
+            token: paramRoute.token,
+            receiver: paramRoute.receiver,
             messages: [],
             conversation: 0,
             ledger_id: 0,
             is_refreshing: false
         }
 
-        this.socket = WebSocketServer.connect(this.props.navigation.state.params.socket_url);
+        this.socket = WebSocketServer.connect(paramRoute.socket_url);
 
         this.willBlur = this.props.navigation.addListener("willBlur", () => {
             
@@ -41,6 +42,8 @@ class DirectChatScreen extends Component {
             await this.getMessages();
             this.subscribeSocket();
         });
+
+        this.getMessages();
     }
 
     componentDidMount() {
@@ -260,7 +263,7 @@ class DirectChatScreen extends Component {
         return (
             <View style={styles.container}>
                 <View style={{ marginLeft: 25 }}>
-                    <Toolbar />
+                    <Toolbar onPress={() => this.props.navigation.goBack()}/>
                 </View>
                 <GiftedChat
                     messages={this.state.messages}
