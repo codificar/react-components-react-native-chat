@@ -396,7 +396,7 @@ class RideChatScreen extends Component {
         return (
             <View style={styles.container}>
                 <View style={{ marginLeft: 25 }}>
-                    <Toolbar />
+                    <Toolbar onPress={() => this.props.navigation.goBack()} />
                 </View>
                 <GiftedChat
                     messages={this.state.messages}
