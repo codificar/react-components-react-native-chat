@@ -11,8 +11,10 @@ import { getMessageDirectChat, sendMessageDirectChat } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
+import Sound from 'react-native-sound';
 
 const send = require('react-native-chat/src/img/send.png');
+const sound_file = require('react-native-chat/src/files/beep.wav');
 
 class DirectChatScreen extends Component {
     constructor(props) {
@@ -37,20 +39,21 @@ class DirectChatScreen extends Component {
             this.unsubscribeSocket();
         })
 
-        this.willFocus = this.props.navigation.addListener("willFocus", async () => {
+        Sound.setCategory('Playback');
 
-            await this.getMessages();
-            this.subscribeSocket();
+        this.sound = new Sound(sound_file, null, (err) => {
+            console.log(err);
         });
-
-        this.getMessages();
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         this.backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
             this.props.navigation.goBack();
             return true;
         });
+
+        await this.getMessages();
+        this.subscribeSocket();
     }
 
     unsubscribeSocket() {
@@ -66,6 +69,14 @@ class DirectChatScreen extends Component {
                 })
             }
         }
+    }
+
+    play() {
+        this.sound.setCurrentTime(0).play((success) => {
+            if(!success){
+                console.log("didn't play");
+            }
+        });
     }
 
     /**
@@ -186,6 +197,10 @@ class DirectChatScreen extends Component {
                     received: false,
                     user: { _id: data.message.user_id },
                 };
+
+                if (data.message.user_id !== this.state.ledger_id) {
+                    this.play();
+                }
 
                 this.setState(state => {
                     if (
