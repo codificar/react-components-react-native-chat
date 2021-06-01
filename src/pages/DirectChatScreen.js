@@ -5,7 +5,7 @@ import {
     Bubble,
     MessageText
 } from 'react-native-gifted-chat';
-import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
+import { View, StyleSheet, BackHandler, Image, RefreshControl, Vibration } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { getMessageDirectChat, sendMessageDirectChat } from '../services/api';
 import { withNavigation } from 'react-navigation';
@@ -14,7 +14,7 @@ import strings from '../lang/strings';
 import Sound from 'react-native-sound';
 
 const send = require('react-native-chat/src/img/send.png');
-const sound_file = require('react-native-chat/src/files/beep.wav');
+const sound_file = require('react-native-chat/src/files/beep.mp3');
 
 class DirectChatScreen extends Component {
     constructor(props) {
@@ -72,11 +72,16 @@ class DirectChatScreen extends Component {
     }
 
     play() {
-        this.sound.setCurrentTime(0).play((success) => {
-            if(!success){
-                console.log("didn't play");
-            }
-        });
+        try {
+            Vibration.vibrate();
+            this.sound.setCurrentTime(0).play((success) => {
+                if(!success){
+                    console.log("didn't play");
+                }
+            });
+        } catch (error) {
+            console.log('play', error);
+        }
     }
 
     /**

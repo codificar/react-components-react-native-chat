@@ -33,7 +33,7 @@ import strings from '../lang/strings';
 import Sound from 'react-native-sound';
 
 const send = require('react-native-chat/src/img/send.png');
-const sound_file = require('react-native-chat/src/files/beep.wav');
+const sound_file = require('react-native-chat/src/files/beep.mp3');
 
 let color = '#FBFBFB';
 

@@ -20,7 +20,7 @@ import Badger from './Badger';
 import Sound from 'react-native-sound';
 
 const icon = require('react-native-chat/src/img/chat.png');
-const sound_file = require('react-native-chat/src/files/beep.wav');
+const sound_file = require('react-native-chat/src/files/beep.mp3');
 
 class RideButton extends Component {
   constructor(props) {
