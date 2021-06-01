@@ -21,9 +21,11 @@ import { getMessageChat, seeMessage, sendMessage } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
+import Sound from 'react-native-sound';
 
 const send = require('react-native-chat/src/img/send.png');
 var color = '#FBFBFB';
+const sound_file = require('react-native-chat/src/files/beep.mp3');
 
 class RideChatScreen extends Component {
     constructor(props) {
@@ -64,7 +66,12 @@ class RideChatScreen extends Component {
         this.willFocus = this.props.navigation.addListener("willFocus", async () => {
             await this.getConversation();
         });
-        
+
+        Sound.setCategory('Playback');
+
+        this.sound = new Sound(sound_file, null, (err) => {
+            console.log(err);
+        });
     }
 
     componentDidMount() {
@@ -155,7 +162,16 @@ class RideChatScreen extends Component {
      * Play the sound request
      */
     playSoundRequest() {
-        Vibration.vibrate();
+        try {
+            Vibration.vibrate();
+            this.sound.setCurrentTime(0).play((success) => {
+                if(!success){
+                    console.log("didn't play");
+                }
+            });
+        } catch (error) {
+            console.log('playSoundRequest', error);
+        }
     }
 
     seeMessage() {
@@ -231,7 +247,7 @@ class RideChatScreen extends Component {
                 });
 
                 this.setState({ lastIdMessage: data.message.id });
-                if (data.message.is_seen == 0 && data.message.user_id !== this.props.ledger) {
+                if (data.message.is_seen == 0 && data.message.user_id !== this.state.userLedgeId) {
                     this.playSoundRequest();
                     this.seeMessage();
                 }

@@ -5,14 +5,16 @@ import {
     Bubble,
     MessageText
 } from 'react-native-gifted-chat';
-import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
+import { View, StyleSheet, BackHandler, Image, RefreshControl, Vibration } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { getMessageDirectChat, sendMessageDirectChat } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
+import Sound from 'react-native-sound';
 
 const send = require('react-native-chat/src/img/send.png');
+const sound_file = require('react-native-chat/src/files/beep.mp3');
 
 class DirectChatScreen extends Component {
     constructor(props) {
@@ -44,6 +46,12 @@ class DirectChatScreen extends Component {
         });
 
         this.getMessages();
+
+        Sound.setCategory('Playback');
+
+        this.sound = new Sound(sound_file, null, (err) => {
+            console.log(err);
+        });
     }
 
     componentDidMount() {
@@ -66,6 +74,20 @@ class DirectChatScreen extends Component {
                 })
             }
         }
+    }
+
+    play() {
+        try {
+            Vibration.vibrate();
+            this.sound.setCurrentTime(0).play((success) => {
+                if(!success){
+                    console.log("didn't play");
+                }
+            });
+        } catch (error) {
+            console.log('play', error);
+        }
+        
     }
 
     /**
@@ -187,6 +209,10 @@ class DirectChatScreen extends Component {
                     received: false,
                     user: { _id: data.message.user_id },
                 };
+
+                if (data.message.user_id !== this.state.ledger_id) {
+                    this.play();
+                }
 
                 this.setState(state => {
                     if (

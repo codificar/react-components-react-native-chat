@@ -10,8 +10,10 @@ import { withNavigation } from 'react-navigation';
 import { getConversation } from '../services/api';
 import WebSocketServer from "../services/socket";
 import Badger from './Badger';
+import Sound from 'react-native-sound';
 
 const icon = require('react-native-chat/src/img/chat.png');
+const sound_file = require('react-native-chat/src/files/beep.mp3');
 
 class RideButton extends Component {
     constructor(props) {
@@ -34,6 +36,12 @@ class RideButton extends Component {
 			this.unsubscribeSocket();
 			this.unsubscribeSocketNewConversation();
 		});
+
+        Sound.setCategory('Playback');
+
+        this.sound = new Sound(sound_file, null, (err) => {
+            console.log(err);
+        });
     }
 
     componentDidMount() {
@@ -92,8 +100,17 @@ class RideButton extends Component {
      * Play the sound request
      */
     playSoundRequest() {
-        Vibration.vibrate();
-    }
+        try {
+            Vibration.vibrate();
+            this.sound.setCurrentTime(0).play((success) => {
+                if(!success){
+                    console.log("didn't play");
+                }
+            });
+        } catch (error) {
+            console.log('playSoundRequest', error);
+        }
+      }
 
     async getConversation() {
 		try {
