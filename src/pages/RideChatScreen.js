@@ -30,8 +30,10 @@ import Toolbar from '../components/ToolBar';
 import { getMessageChat, seeMessage, sendMessage } from '../services/api';
 import WebSocketServer from '../services/socket';
 import strings from '../lang/strings';
+import Sound from 'react-native-sound';
 
 const send = require('react-native-chat/src/img/send.png');
+const sound_file = require('react-native-chat/src/files/beep.wav');
 
 let color = '#FBFBFB';
 
@@ -68,6 +70,11 @@ class RideChatScreen extends Component {
     color = paramRoute.color;
 
     this.socket = WebSocketServer.connect(paramRoute.socket_url);
+    Sound.setCategory('Playback');
+
+    this.sound = new Sound(sound_file, null, (err) => {
+        console.log(err);
+    });
   }
 
   componentDidMount() {
@@ -158,6 +165,11 @@ class RideChatScreen extends Component {
    */
   playSoundRequest() {
     Vibration.vibrate();
+    this.sound.setCurrentTime(0).play((success) => {
+      if(!success){
+          console.log("didn't play");
+      }
+    });
   }
 
   seeMessage() {
@@ -228,7 +240,7 @@ class RideChatScreen extends Component {
         this.setState({ lastIdMessage: data.message.id });
         if (
           data.message.is_seen === 0 &&
-          data.message.user_id !== this.props.ledger
+          data.message.user_id !== this.state.userLedgeId
         ) {
           this.playSoundRequest();
           this.seeMessage();
