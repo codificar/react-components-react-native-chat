@@ -1,32 +1,38 @@
 {
-    "name": "react-native-chat",
-    "version": "1.0.0",
-    "description": "A component for chat",
-    "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "license": "MIT",
-
-    "repository": {
-      "type": "git",
-      "url": "git+https://git.codificar.com.br/react-components/react-native-chat"
-    },
-
-    "dependencies": {
-      "react-native-gifted-chat": "^0.16.3",
-      "react-native-status-bar-height": "^2.5.0",
-      "react-native-sound": "^0.11.0"
-    },
-    
-    "peerDependencies": {
-        "react-native": ">=0.47.0"
-    },
-
-    "author": "Codificar",
-
-    "bugs": {
-      "url": "https://git.codificar.com.br/react-components/react-native-chat/issues"
-    },
-
-    "homepage": "https://git.codificar.com.br/react-components/react-native-chat#readme"
-  }
+  "name": "react-native-chat-update",
+  "version": "1.0.0",
+  "main": "./index.tsx",
+  "description": "A component for chat",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://git.codificar.com.br/react-components/react-native-chat"
+  },
+  "devDependencies": {
+    "@types/react": "^16.9.53",
+    "@types/react-native": "^0.63.30",
+    "@types/styled-components-react-native": "*",
+    "typescript": "^4.0.3"
+  },
+  "dependencies": {
+    "@react-navigation/native": "^5.9.4",
+    "lodash": "^4.17.21",
+    "react-native": "*",
+    "react-native-gifted-chat": "^0.16.3",
+    "react-native-sound": "^0.11.0",
+    "react-native-status-bar-height": "^2.6.0",
+    "socket.io-client": "2.3.1",
+    "styled-components": "*"
+  },
+  "peerDependencies": {
+    "react-native": ">=0.47.0"
+  },
+  "author": "Codificar",
+  "bugs": {
+    "url": "https://git.codificar.com.br/react-components/react-native-chat/issues"
+  },
+  "homepage": "https://git.codificar.com.br/react-components/react-native-chat#readme"
+}

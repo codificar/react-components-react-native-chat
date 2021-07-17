@@ -1,6 +1,3 @@
-/* eslint-disable no-use-before-define */
-/* eslint-disable react/jsx-filename-extension */
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import React from 'react';
 import { getStatusBarHeight } from 'react-native-status-bar-height';
 import {
