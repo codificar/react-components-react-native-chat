@@ -1,15 +1,10 @@
-/**
- * Screens
- */
-export * from './src/screens';
+export * from "./src/screens";
+export * from "./src/components";
 
-/**
- * Types
- */
- export type {
-    PropsDirectChatScreen,
-    PropsHelpChatScreen,
-    PropsListDirectsScreen,
-    PropsListProvidersForConversation,
-    PropsRideChatScreen
-  } from './types';
+export type {
+  PropsDirectChatScreen,
+  PropsHelpChatScreen,
+  PropsListDirectsScreen,
+  PropsListProvidersForConversation,
+  PropsRideChatScreen,
+} from "./types";
