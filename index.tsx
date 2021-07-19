@@ -1,5 +1,6 @@
 export * from "./src/screens";
-export * from "./src/components";
+export { default as RideButton } from "./src/components/RideButton";
+export { default as ChatButton } from "./src/components/DirectChatButton";
 
 export type {
   PropsDirectChatScreen,

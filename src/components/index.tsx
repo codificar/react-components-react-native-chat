@@ -6,5 +6,5 @@ export { default as RideButton } from "./RideButton";
 export { default as ToolBar } from "./ToolBar";
 export { default as Send } from "./Send";
 export { default as If } from "./If";
-export {default as ConversationPerfil} from './ConversationPerfil';
-export {default as ComponentPerfil} from './ComponentPerfil';
+export { default as ConversationPerfil } from "./ConversationPerfil";
+export { default as ComponentPerfil } from "./ComponentPerfil";
