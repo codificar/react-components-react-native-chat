@@ -1,5 +1,5 @@
 {
-  "name": "react-native-chat-update",
+  "name": "react-native-chat",
   "version": "1.0.0",
   "main": "./index.tsx",
   "description": "A component for chat",
