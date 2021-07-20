@@ -13,9 +13,9 @@ import {
   MessageText,
   Time,
 } from "react-native-gifted-chat";
-import Sound from "react-native-sound";
+// import Sound from "react-native-sound";
 import { Send } from "../../components";
-const sound_file = require("react-native-chat/src/files/beep.mp3");
+// const sound_file = require("react-native-chat/src/files/beep.mp3");
 
 export const RideChatScreenContainer: React.FC = () => {
   let socket;
@@ -220,11 +220,11 @@ export const RideChatScreenContainer: React.FC = () => {
   };
 
   useEffect(() => {
-    Sound.setCategory("Playback");
+    // Sound.setCategory("Playback");
 
-    sound = new Sound(sound_file, null, (err) => {
+   /*  sound = new Sound(sound_file, null, (err) => {
       console.log(err);
-    });
+    }); */
     if (params.id && params.token && params.url) {
       setParamsListDirects({
         id: params.id,

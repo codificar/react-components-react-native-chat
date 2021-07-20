@@ -1,6 +1,6 @@
 import React, {FC, useEffect,useState} from 'react';
 import {RefreshControl, Vibration } from 'react-native';
-import Sound from 'react-native-sound';
+// import Sound from 'react-native-sound';
 import {
     GiftedChat,
     Bubble,
@@ -13,7 +13,7 @@ import DirectChatScreen from './DirectChatScreen';
 import { DirectChatScreenParams } from '../../types/screens/navigation';
 import { Send } from '../../components';
 
-const sound_file = require('react-native-chat/src/files/beep.mp3');
+// const sound_file = require('../../files/beep.mp3');
 
 export const DirectChatScreenContainer: FC = () => {
     let socket
@@ -47,7 +47,7 @@ export const DirectChatScreenContainer: FC = () => {
 
     const play = () => {
         Vibration.vibrate();
-        new Sound(sound_file, null).setCurrentTime(0);
+        // new Sound(sound_file, null).setCurrentTime(0);
     }
 
     const unsubscribeSocket = () => {

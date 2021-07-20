@@ -7,11 +7,11 @@ import WebSocketServer from "../../services/socket";
 import { getConversation } from "../../services/api";
 import { Touchable, Wrapper, Container, Img } from "./styles";
 import { useEffect } from "react";
-import Sound from "react-native-sound";
+// import Sound from "react-native-sound";
 import { useNavigation } from '@react-navigation/native';
 
 const icon = require("react-native-chat/src/img/chat.png");
-const sound_file = require("react-native-chat/src/files/beep.mp3");
+// const sound_file = require("react-native-chat/src/files/beep.mp3");
 
 type Props = {
   id: number;
@@ -36,11 +36,11 @@ const ConversationPerfilContainer: React.FC<Props> = ({
   const [contNewMensag, setContNewMensag] = useState(0);
   const [conversation_id, setConversation_id] = useState(0);
   const [receiveID, setReceiveID] = useState(0);
-  let sound = new Sound(sound_file, null);
+  // let sound = new Sound(sound_file, null);
 
   const playSoundRequest = () => {
     Vibration.vibrate();
-    sound.setCurrentTime(0);
+    // sound.setCurrentTime(0);
   };
 
   const subscribeSocketConversation = (id) => {
