@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
         width: '30%',
         borderRadius: 5,
         elevation: 5,
-        backgroundColor: '#f97e00'
+        backgroundColor: 'white'
     },
     childrenTouchable: {
         flexDirection: 'row',
