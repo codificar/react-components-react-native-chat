@@ -45,7 +45,10 @@ class DirectChatButton extends Component {
                 style={styles.touchable}
                 onPress={() => this.navigateTo()}>
                 <View style={styles.childrenTouchable}>
-                    <Text style={styles.buttonText}>{strings.chat}</Text>
+                   <Image
+                        style={styles.img}
+                        source={icon}
+                   />
                 </View>
             </TouchableOpacity>
         );
@@ -71,7 +74,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: 'white'
+    },
+    img: {
+        height: 22,
+        width: 22
     }
+    
 });
 
 export default withNavigation(DirectChatButton);
