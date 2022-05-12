@@ -25,12 +25,12 @@ export function getConversation(url, id, token, request_id) {
  * @param {number} conversation_id 
  */
 export function getMessageChat(url, id, token, conversation_id) {
-    return axios.get(`${url}/api/libs/chat/messages`, { 
-        params: { 
-            id, 
-            token, 
+    return axios.get(`${url}/api/libs/chat/messages`, {
+        params: {
+            id,
+            token,
             conversation_id
-        } 
+        }
     });
 }
 
@@ -70,7 +70,7 @@ export function sendMessage(
     message,
     receiver_id,
     type = 'text'
-){
+) {
     return axios.post(`${url}/api/libs/chat/send`, {
         id: id,
         token: token,
@@ -120,7 +120,7 @@ export function getMessageHelpChat(url, id, token, request_id) {
  * @param {string} token 
  * @param {string} name 
  */
-export function listProvidersForConversation (url, id, token, name) {
+export function listProvidersForConversation(url, id, token, name) {
     return axios.get(`${url}/api/libs/get_providers_chat`, {
         params: {
             id,
@@ -136,7 +136,7 @@ export function listProvidersForConversation (url, id, token, name) {
  * @param {number} id 
  * @param {string} token 
  */
-export function listDirectConversations (url, id, token) {
+export function listDirectConversations(url, id, token) {
     return axios.get(`${url}/api/libs/list_direct_conversation`, {
         params: {
             id,
@@ -171,10 +171,23 @@ export function getMessageDirectChat(url, id, token, receiver) {
  * @param {string} message 
  */
 export function sendMessageDirectChat(url, id, token, receiver, message) {
+    console.log(url, id, token, receiver, message);
     return axios.post(`${url}/api/libs/set_direct_message`, {
         id,
         token,
         receiver,
         message
     });
+}
+
+export function responseQuickReply(url, id, token, value, delivery_package_id, message_id, auto_response, receiver, conversation) {
+    return axios.post(`${url}/api/libs/chat/response-quick-reply/${delivery_package_id}`, {
+        id: id,
+        token: token,
+        status: value,
+        message_id: message_id,
+        auto_response,
+        receiver,
+        conversation,
+    })
 }

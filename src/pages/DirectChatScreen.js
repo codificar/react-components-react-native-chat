@@ -7,10 +7,11 @@ import {
 } from 'react-native-gifted-chat';
 import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
 import Toolbar from '../components/ToolBar';
-import { getMessageDirectChat, sendMessageDirectChat } from '../services/api';
+import { getMessageDirectChat, sendMessageDirectChat, responseQuickReply } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
+import QuickReplies from 'react-native-gifted-chat/lib/QuickReplies';
 
 const send = require('react-native-chat/src/img/send.png');
 
@@ -27,7 +28,7 @@ class DirectChatScreen extends Component {
             messages: [],
             conversation: 0,
             ledger_id: 0,
-            is_refreshing: false
+            is_refreshing: false,
         }
 
         this.socket = WebSocketServer.connect(paramRoute.socket_url);
@@ -90,7 +91,7 @@ class DirectChatScreen extends Component {
             this.setState({ 
                 messages: formattedArrayMessages,
                 ledger_id: data.user_ledger_id,
-                is_refreshing: false
+                is_refreshing: false,
             });
             
         } catch (error) {
@@ -114,21 +115,80 @@ class DirectChatScreen extends Component {
             })
             const finalArrayMessages = [];
             for (let i = 0; i < formattedArrayMessages.length; i++) {
-                finalArrayMessages.unshift({
-                    _id: formattedArrayMessages[i].id,
-                    createdAt: formattedArrayMessages[i].created_at,
-                    text: formattedArrayMessages[i].message,
-                    user: { _id: formattedArrayMessages[i].user_id },
-                    image: formattedArrayMessages[i].picture ? this.state.url + '/uploads/' + formattedArrayMessages[i].picture : null
-                });
-            }
+                
+                if((formattedArrayMessages[i].type_quick_reply) && formattedArrayMessages[i].response_quick_reply == null){
+                    console.log('chegou', formattedArrayMessages[i].type_quick_reply)
+                    finalArrayMessages.unshift({
+                        _id: formattedArrayMessages[i].id,
+                        createdAt: formattedArrayMessages[i].created_at,
+                        text: formattedArrayMessages[i].message,
+                        user: { _id: formattedArrayMessages[i].user_id },
+                        image: formattedArrayMessages[i].picture ? this.state.url + '/uploads/' + formattedArrayMessages[i].picture : null,
+                        quickReplies: {
+                            type: 'radio', // or 'checkbox',
+                            keepIt: true,
+                            values: [
+                              
+                              {
+                                title: '✅ Aceitar pacote',
+                                value: 1,
+                                delivery_package_id: formattedArrayMessages[i].delivery_package_id,
+                                conversation: this.state.conversation,
+                                auto_response: 'Aceito',
 
+                              },
+                              {
+                                title: '❌ Recusar pacote',
+                                value: 0,
+                                delivery_package_id: formattedArrayMessages[i].delivery_package_id,
+                                conversation: this.state.conversation,
+                                auto_response: 'Recusado',
+                              },
+                            ],
+                        }
+                        
+                    });
+                } 
+                else {
+                    console.log('aculá', formattedArrayMessages[i].type_quick_reply)
+                    finalArrayMessages.unshift({
+                        _id: formattedArrayMessages[i].id,
+                        createdAt: formattedArrayMessages[i].created_at,
+                        text: formattedArrayMessages[i].message,
+                        user: { _id: formattedArrayMessages[i].user_id },
+                        image: formattedArrayMessages[i].picture ? this.state.url + '/uploads/' + formattedArrayMessages[i].picture : null                        
+                    });
+                }
+                
+            }
             return finalArrayMessages;
         }
 
         return [];
     }
 
+    async onQuickReply(quickReply) {
+        console.log(quickReply);
+        var delivery_package_id = quickReply[0].delivery_package_id;
+        var value = quickReply[0].value;
+        var message_id = quickReply[0].messageId;
+        var auto_response = quickReply[0].auto_response;
+        var conversation = quickReply[0].conversation;
+        var response = await responseQuickReply(
+            this.state.url,
+            this.state.id,
+            this.state.token,
+            value,
+            delivery_package_id,
+            message_id,
+            auto_response,
+            this.state.ledger_id,
+            conversation,
+        );
+        
+        console.log('response => ', response);
+        this.props.navigation.goBack();
+    }
     /**
      * set messages array with the new message
      * @param {String} messages
@@ -259,6 +319,18 @@ class DirectChatScreen extends Component {
         />
     }
 
+     /**
+     * render custom text message
+     *  @param {any} props
+     */
+    renderMessageQuickReplies(props) {
+        return (
+            <QuickReplies
+                {...props}
+                textStyle={{ right: styles.messageTextRight, left: styles.messageText }}
+            />
+        )
+    }
     render() {
         return (
             <View style={styles.container}>
@@ -274,6 +346,8 @@ class DirectChatScreen extends Component {
                     renderMessageText={this.renderMessageText}
                     renderBubble={this.renderBubble}
                     renderSend={props => this.renderSend(props)}
+                    renderQuickReplies={this.renderMessageQuickReplies}
+                    onQuickReply={(quickReply) => this.onQuickReply(quickReply)}
                     listViewProps={{
                         refreshControl: this.renderRefreshControl()
                     }}
