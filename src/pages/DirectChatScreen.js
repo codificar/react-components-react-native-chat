@@ -78,6 +78,7 @@ class DirectChatScreen extends Component {
             is_refreshing: true
         });
         try {
+            console.log(this.state.token, 'receive: ', this.state.receiver, 'id: ',this.state.id);
             const response = await getMessageDirectChat(
                 this.state.url,
                 this.state.id,
@@ -86,6 +87,7 @@ class DirectChatScreen extends Component {
             );
     
             const { data } = response;
+            console.log('aqui', data)
             const formattedArrayMessages = this.formatMessages(data.messages);
     
             this.setState({ 
@@ -108,16 +110,17 @@ class DirectChatScreen extends Component {
      */
     formatMessages (messages) {
         const formattedArrayMessages = messages;
-
         if (formattedArrayMessages.length > 0) {
             this.setState({
                 conversation: formattedArrayMessages[0].conversation_id
             })
             const finalArrayMessages = [];
+            
             for (let i = 0; i < formattedArrayMessages.length; i++) {
-                
-                if((formattedArrayMessages[i].type_quick_reply) && formattedArrayMessages[i].response_quick_reply == null){
-                    console.log('chegou', formattedArrayMessages[i].type_quick_reply)
+                let quickReply = JSON.parse(formattedArrayMessages[i].response_quick_reply);
+                if((!!formattedArrayMessages[i].response_quick_reply && quickReply.answered == null)){
+                    console.log('chegou', formattedArrayMessages[i].response_quick_reply)
+                    
                     finalArrayMessages.unshift({
                         _id: formattedArrayMessages[i].id,
                         createdAt: formattedArrayMessages[i].created_at,
@@ -127,24 +130,8 @@ class DirectChatScreen extends Component {
                         quickReplies: {
                             type: 'radio', // or 'checkbox',
                             keepIt: true,
-                            values: [
-                              
-                              {
-                                title: '✅ Aceitar pacote',
-                                value: 1,
-                                delivery_package_id: formattedArrayMessages[i].delivery_package_id,
-                                conversation: this.state.conversation,
-                                auto_response: 'Aceito',
-
-                              },
-                              {
-                                title: '❌ Recusar pacote',
-                                value: 0,
-                                delivery_package_id: formattedArrayMessages[i].delivery_package_id,
-                                conversation: this.state.conversation,
-                                auto_response: 'Recusado',
-                              },
-                            ],
+                            values: quickReply.values,
+                            
                         }
                         
                     });
@@ -160,7 +147,10 @@ class DirectChatScreen extends Component {
                     });
                 }
                 
+
+            
             }
+
             return finalArrayMessages;
         }
 
@@ -178,23 +168,27 @@ class DirectChatScreen extends Component {
             this.state.url,
             this.state.id,
             this.state.token,
-            value,
-            delivery_package_id,
-            message_id,
-            auto_response,
-            this.state.ledger_id,
-            conversation,
+            {
+                value,
+                delivery_package_id,
+                message_id,
+                auto_response,
+                receiver: this.state.ledger_id,
+                conversation
+            },
         );
         
         console.log('response => ', response);
         this.props.navigation.goBack();
     }
+
     /**
      * set messages array with the new message
      * @param {String} messages
      */
     async onSend(messages = []) {
         try {
+            
             const response = await sendMessageDirectChat(
                 this.state.url,
                 this.state.id,
@@ -331,6 +325,8 @@ class DirectChatScreen extends Component {
             />
         )
     }
+
+
     render() {
         return (
             <View style={styles.container}>

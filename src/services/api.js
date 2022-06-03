@@ -180,14 +180,11 @@ export function sendMessageDirectChat(url, id, token, receiver, message) {
     });
 }
 
-export function responseQuickReply(url, id, token, value, delivery_package_id, message_id, auto_response, receiver, conversation) {
-    return axios.post(`${url}/api/libs/chat/response-quick-reply/${delivery_package_id}`, {
+export function responseQuickReply(url, id, token, response_quick_reply) {
+    console.log(url, id, token,response_quick_reply);
+    return axios.post(`${url}/api/libs/chat/response-quick-reply`, {
         id: id,
         token: token,
-        status: value,
-        message_id: message_id,
-        auto_response,
-        receiver,
-        conversation,
+        quick_reply: JSON.stringify(response_quick_reply)
     })
 }
