@@ -13,4 +13,12 @@ const screens = {
     ListProvidersForConversation: { screen: ListProvidersForConversation }
 };
 
+export {
+    HelpChatScreen,
+    RideChatScreen,
+    ListDirectsScreen,
+    DirectChatScreen,
+    ListProvidersForConversation,
+}
+
 export default screens;
