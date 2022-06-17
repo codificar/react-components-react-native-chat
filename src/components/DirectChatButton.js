@@ -31,7 +31,7 @@ class DirectChatButton extends Component {
 
     async navigateTo() {
         this.props.navigation.navigate('DirectChatScreen', {
-            receiveID: this.props.receiver,
+            receiver: this.props.receiver,
             url: this.props.url,
             socket_url: this.props.socket_url,
             id: this.props.id,

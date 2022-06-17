@@ -20,22 +20,25 @@ const box_img = require('react-native-chat/src/img/box.png');
 class ListDirectsScreen extends Component {
     constructor(props) {
         super(props);
+        var paramRoute = this.props.navigation != undefined ? this.props.navigation.state.params : this.props.route.params;
+
+        if (paramRoute === undefined)
+            paramRoute = this.props.route.params;
 
         this.state = {
-            url: this.props.navigation.state.params.url,
-            socket_url: this.props.navigation.state.params.socket_url,
-            id: this.props.navigation.state.params.id,
-            token: this.props.navigation.state.params.token,
-            app_type: this.props.navigation.state.params.app_type,
+            url: paramRoute.url,
+            socket_url: paramRoute.socket_url,
+            id: paramRoute.id,
+            token: paramRoute.token,
+            app_type: paramRoute.app_type,
             conversations: [],
             show_new_conversation: false,
             is_refreshing: false
         }
 
-        this.willFocus = this.props.navigation.addListener("willFocus", () => {
-
+        /*this.willFocus = this.props.navigation.addListener("willFocus", () => {
             this.listDirectConversations();
-        });
+        });*/
     }
 
     componentDidMount() {
@@ -49,7 +52,7 @@ class ListDirectsScreen extends Component {
 
     componentWillUnmount() {
 		this.backHandler.remove();
-		this.willFocus.remove();
+		//this.willFocus.remove();
 	}
 
     async listDirectConversations() {
@@ -77,11 +80,32 @@ class ListDirectsScreen extends Component {
         }
     }
 
+    navigateToChatScreen(item) {
+        if (!item.request_id || item.request_id == 0)
+            this.props.navigation.navigate('DirectChatScreen', {
+                url: this.state.url,
+                socket_url: this.state.socket_url,
+                id: this.state.id,
+                token: this.state.token,
+                receiver: item.id
+            })
+        else
+            this.props.navigation.navigate('RideChatScreen', {
+                conversation_id: item.conversation_id,
+                url: this.state.url,
+                socket_url: this.state.socket_url,
+                id: this.state.id,
+                token: this.state.token,
+                requestId: item.request_id,
+                color: '#687a95'
+            });
+    }
+
     render() {
         return (
             <View style={styles.container}>
                 <View>
-                    <Toolbar />
+                    <Toolbar onPress={() => this.props.navigation.goBack()} />
                     <Text style={styles.title}>{strings.directs}</Text>
                 </View>
 
@@ -114,13 +138,7 @@ class ListDirectsScreen extends Component {
                             keyExtractor={(x, i) => i.toString()}
                             renderItem={({ item, index }) => (
                                 <TouchableOpacity
-                                    onPress={() => this.props.navigation.navigate('DirectChatScreen', {
-                                        url: this.state.url,
-                                        socket_url: this.state.socket_url,
-                                        id: this.state.id,
-                                        token: this.state.token,
-                                        receiver: item.id
-                                    })}
+                                    onPress={() => this.navigateToChatScreen(item)}
                                 >
                                     <View style={styles.row} >
                                         
@@ -138,7 +156,7 @@ class ListDirectsScreen extends Component {
                                             </Text>
 
                                             <Text style={styles.row_txt} numberOfLines={1}>
-                                                {item.first_name + ' ' + item.last_name}
+                                                {item.full_name}
                                             </Text>
 
                                             <Text
