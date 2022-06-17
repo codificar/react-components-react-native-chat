@@ -78,7 +78,6 @@ class DirectChatScreen extends Component {
             is_refreshing: true
         });
         try {
-            console.log(this.state.token, 'receive: ', this.state.receiver, 'id: ',this.state.id);
             const response = await getMessageDirectChat(
                 this.state.url,
                 this.state.id,
@@ -87,7 +86,6 @@ class DirectChatScreen extends Component {
             );
     
             const { data } = response;
-            console.log('aqui', data)
             const formattedArrayMessages = this.formatMessages(data.messages);
     
             this.setState({ 
@@ -119,7 +117,6 @@ class DirectChatScreen extends Component {
             for (let i = 0; i < formattedArrayMessages.length; i++) {
                 let quickReply = JSON.parse(formattedArrayMessages[i].response_quick_reply);
                 if((!!formattedArrayMessages[i].response_quick_reply && quickReply.answered == null)){
-                    console.log('chegou', formattedArrayMessages[i].response_quick_reply)
                     
                     finalArrayMessages.unshift({
                         _id: formattedArrayMessages[i].id,
@@ -137,7 +134,6 @@ class DirectChatScreen extends Component {
                     });
                 } 
                 else {
-                    console.log('aculá', formattedArrayMessages[i].type_quick_reply)
                     finalArrayMessages.unshift({
                         _id: formattedArrayMessages[i].id,
                         createdAt: formattedArrayMessages[i].created_at,
@@ -158,7 +154,6 @@ class DirectChatScreen extends Component {
     }
 
     async onQuickReply(quickReply) {
-        console.log(quickReply);
         var delivery_package_id = quickReply[0].delivery_package_id;
         var value = quickReply[0].value;
         var message_id = quickReply[0].messageId;
@@ -178,7 +173,6 @@ class DirectChatScreen extends Component {
             },
         );
         
-        console.log('response => ', response);
         this.props.navigation.goBack();
     }
 
