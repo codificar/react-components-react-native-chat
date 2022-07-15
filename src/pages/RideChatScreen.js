@@ -169,7 +169,7 @@ class RideChatScreen extends Component {
      */
     playSoundRequest() {
         Vibration.vibrate();
-        this.soundPlay.play(() => {});
+        this.state.soundPlay.play(() => {});
     }
 
     seeMessage() {
