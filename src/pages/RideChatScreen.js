@@ -43,7 +43,9 @@ class RideChatScreen extends Component {
             lastIdMessage: '',
             user_ledger_id: 0,
             ledger: 0,
-            soundParam: paramRoute.sound ? paramRoute.sound : false,
+            audio: paramRoute.audio,
+            playSound: null,
+            playSoundError: true,
             url: paramRoute.url,
             id: paramRoute.id,
             token: paramRoute.token,
@@ -73,6 +75,23 @@ class RideChatScreen extends Component {
             this.props.navigation.goBack();
             return true;
         });
+
+        const filenameOrFile = this.state.audio ? this.state.audio : "beep.wav";
+        const basePath = this.state.audio ? null : Sound.MAIN_BUNDLE;
+
+        const sound = new Sound(filenameOrFile, basePath, (error) => {
+            if(error) {
+                console.log('failed to load the sound', error);
+                return;
+            }
+        });
+
+        if(sound) {
+            this.setState({ 
+                playSound: sound,
+                playSoundError: false 
+            })
+        }
 
         const timer = setTimeout(() => {
             this.subscribeSocketNewConversation(this.state.requestId)
@@ -156,21 +175,18 @@ class RideChatScreen extends Component {
      * Play the sound request
      */
     playSoundRequest() {
-        Vibration.vibrate();
-
-        const filenameOrFile = this.state.soundParam ? this.state.soundParam : "beep.wav";
-        const sound = new Sound(filenameOrFile, Sound.MAIN_BUNDLE, (error) => {
-            if(error) {
-                console.log('failed to load the sound', error);
-                return;
-            }
-        });
-
-        if(sound) {
-            sound.play(() => {});
-        } else {
-            console.log('sound is not loaded yet');
+        try {
+            Vibration.vibrate();
+            Sound.setCategory("Playback");
+        
+            if (!this.state.playSoundError) {
+                this.state.playSound.play();
+                this.state.playSound.setVolume(1);
+            }    
+        } catch (e) {
+        console.log('playSoundRequest Error:', e);
         }
+
     }
 
     seeMessage() {
