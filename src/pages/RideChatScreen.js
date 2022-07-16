@@ -44,7 +44,6 @@ class RideChatScreen extends Component {
             user_ledger_id: 0,
             ledger: 0,
             soundParam: paramRoute.sound ? paramRoute.sound : false,
-            soundPlay: '',
             url: paramRoute.url,
             id: paramRoute.id,
             token: paramRoute.token,
@@ -74,17 +73,6 @@ class RideChatScreen extends Component {
             this.props.navigation.goBack();
             return true;
         });
-
-        const filenameOrFile = this.state.soundParam ? this.state.soundParam : "beep.wav";
-
-        const sound = new Sound(filenameOrFile, Sound.MAIN_BUNDLE, (error) => {
-            if(error) {
-                console.log('failed to load the sound', error);
-                return;
-            }
-        });
-
-        this.setState({ soundPlay: sound });
 
         const timer = setTimeout(() => {
             this.subscribeSocketNewConversation(this.state.requestId)
@@ -169,7 +157,20 @@ class RideChatScreen extends Component {
      */
     playSoundRequest() {
         Vibration.vibrate();
-        this.state.soundPlay.play(() => {});
+
+        const filenameOrFile = this.state.soundParam ? this.state.soundParam : "beep.wav";
+        const sound = new Sound(filenameOrFile, Sound.MAIN_BUNDLE, (error) => {
+            if(error) {
+                console.log('failed to load the sound', error);
+                return;
+            }
+        });
+
+        if(sound) {
+            sound.play(() => {});
+        } else {
+            console.log('sound is not loaded yet');
+        }
     }
 
     seeMessage() {
