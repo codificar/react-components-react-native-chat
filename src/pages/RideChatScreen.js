@@ -84,7 +84,7 @@ class RideChatScreen extends Component {
             }
         });
 
-        this.setState({ sound });
+        this.setState({ soundPlay: sound });
 
         const timer = setTimeout(() => {
             this.subscribeSocketNewConversation(this.state.requestId)
