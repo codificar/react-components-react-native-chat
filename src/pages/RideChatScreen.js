@@ -52,16 +52,20 @@ class RideChatScreen extends Component {
             conversation_id: paramRoute.conversation_id,
             color: paramRoute.color,
             contNewMensag: 0,
-            is_refreshing: false
+            is_refreshing: false,
         }
 
         color = paramRoute.color;
 
-        this.socket = WebSocketServer.connect(paramRoute.socket_url);
+        if(!WebSocketServer.isConnected) {
+            this.socket = WebSocketServer.connect(this.props.socket_url);
+        } else {
+            this.socket = WebSocketServer.socket;
+        }
 
-        this.willBlur = this.props.navigation.addListener("willBlur", () => {
-            this.unsubscribeSocket();
-            this.unsubscribeSocketNewConversation();
+        this.willBlur = this.props.navigation.addListener("willBlur", async () => {
+            await this.unsubscribeSocket();
+            await this.unsubscribeSocketNewConversation();
         })
 
         this.willFocus = this.props.navigation.addListener("willFocus", async () => {
@@ -72,6 +76,8 @@ class RideChatScreen extends Component {
 
     componentDidMount() {
         this.backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
+            this.unsubscribeSocket();
+            this.unsubscribeSocketNewConversation();
             this.props.navigation.goBack();
             return true;
         });
@@ -103,11 +109,11 @@ class RideChatScreen extends Component {
 
     componentWillUnmount() {
         try {
-          this.backHandler.remove();
-          this.willBlur.remove();
-          this.willFocus.remove();
+            this.unsubscribeSocket();
+            this.unsubscribeSocketNewConversation();
+            this.backHandler.remove();
         } catch (error) {
-          console.log('this.componentWillUnmount Error:', error);
+            console.log('this.componentWillUnmount Error:', error);
         }
     
       }
@@ -180,11 +186,11 @@ class RideChatScreen extends Component {
             Sound.setCategory("Playback");
         
             if (!this.state.playSoundError) {
-                this.state.playSound.play();
                 this.state.playSound.setVolume(1);
+                this.state.playSound.play();
             }    
         } catch (e) {
-        console.log('playSoundRequest Error:', e);
+            console.log('playSound Error:', e);
         }
 
     }
@@ -221,7 +227,7 @@ class RideChatScreen extends Component {
                         this.setState({
                             conversation_id: data.conversation_id
                         })
-                        this.playSoundRequest();
+                        //this.playSoundRequest();
                         this.getConversation();
                     })
             }
@@ -247,13 +253,16 @@ class RideChatScreen extends Component {
                     received: false,
                     user: { _id: data.message.user_id }
                 }
-                console.log('newMessage: ', newMessage);
+
+                if(data.message.user_id !== this.state.userLedgeId) {
+                    this.playSoundRequest();
+                }
 
                 this.setState(state => {
                     if (
                         newMessage._id !==
                         state.messages[state.messages.length - 1]._id &&
-                        data.message.user_id !== this.state.userLedgeId
+                        data.message.user_id !== state.userLedgeId
                     ) {
                         return {
                             messages: GiftedChat.append(state.messages, newMessage),
@@ -263,13 +272,12 @@ class RideChatScreen extends Component {
 
                 this.setState({ lastIdMessage: data.message.id });
                 if (data.message.is_seen == 0 && data.message.user_id !== this.props.ledger) {
-                    this.playSoundRequest();
                     this.seeMessage();
                 }
             })
     }
 
-    unsubscribeSocket() {
+    async unsubscribeSocket() {
         if (this.socket != null) {
             if (this.state.conversation_id) {
                 this.socket.removeAllListeners("newConversation")
@@ -282,7 +290,7 @@ class RideChatScreen extends Component {
         }
     }
 
-    unsubscribeSocketNewConversation() {
+    async unsubscribeSocketNewConversation() {
         this.socket.removeAllListeners("newConversation");
     }
 

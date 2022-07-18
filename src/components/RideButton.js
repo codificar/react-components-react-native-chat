@@ -9,6 +9,7 @@ import {
 import { withNavigation } from 'react-navigation';
 import { getConversation } from '../services/api';
 import WebSocketServer from "../services/socket";
+import Sound from "react-native-sound";
 import Badger from './Badger';
 
 const icon = require('react-native-chat/src/img/chat.png');
@@ -20,23 +21,47 @@ class RideButton extends Component {
         this.state = {
             receiveID: 0,
             conversation_id: 0,
-            contNewMensag: 0
+            contNewMensag: 0,
+            audio: this.props.audio,
+            playSound: null,
+            playSoundError: true,
         }
 
-        this.socket = WebSocketServer.connect(this.props.socket_url);
+        if(!WebSocketServer.isConnected) {
+            this.socket = WebSocketServer.connect(this.props.socket_url);
+        } else {
+            this.socket = WebSocketServer.socket;
+        }
 
         this.willFocus = this.props.navigation.addListener("willFocus", async () => {
             await this.getConversation();
             this.subscribeSocketNewConversation(this.props.request_id);
         });
 
-        this.willBlur = this.props.navigation.addListener("willBlur", () => {
-			this.unsubscribeSocket();
-			this.unsubscribeSocketNewConversation();
+        this.willBlur = this.props.navigation.addListener("willBlur", async () => {
+			await this.unsubscribeSocket();
+			await this.unsubscribeSocketNewConversation();
 		});
     }
 
     componentDidMount() {
+
+        const filenameOrFile = this.state.audio ? this.state.audio : "beep.wav";
+        const basePath = this.state.audio ? null : Sound.MAIN_BUNDLE;
+
+        const sound = new Sound(filenameOrFile, basePath, (error) => {
+            if(error) {
+                console.log('failed to load the sound', error);
+                return;
+            }
+        });
+
+        if(sound) {
+            this.setState({ 
+                playSound: sound,
+                playSoundError: false 
+            })
+        }
         
     }
 
@@ -62,7 +87,7 @@ class RideButton extends Component {
                         conversation_id: data.conversation_id,
                         contNewMensag: 1
                     });
-					this.playSoundRequest()
+					//this.playSoundRequest()
 					console.log('Evento socket newConversation disparado! ', channel, data)
 				})
 		} catch (error) {
@@ -70,11 +95,11 @@ class RideButton extends Component {
 		}
     }
 
-    unsubscribeSocketNewConversation() {
+    async unsubscribeSocketNewConversation() {
         this.socket.removeAllListeners("newConversation");
     }
 
-    unsubscribeSocket() {
+    async unsubscribeSocket() {
         if (this.socket != null) {
             if (this.state.conversation_id) {
                 this.socket.removeAllListeners("newConversation")
@@ -92,7 +117,18 @@ class RideButton extends Component {
      * Play the sound request
      */
     playSoundRequest() {
-        Vibration.vibrate();
+        try {
+            Vibration.vibrate();
+            Sound.setCategory("Playback");
+        
+            if (!this.state.playSoundError) {
+                this.state.playSound.setVolume(1);
+                this.state.playSound.play();
+            }    
+        } catch (e) {
+            console.log('playSound Error:', e);
+        }
+
     }
 
     async getConversation() {
@@ -143,6 +179,8 @@ class RideButton extends Component {
             console.log('conversationId', conversationId);
         }
 
+        this.unsubscribeSocket();
+
         this.props.navigation.navigate('RideChatScreen', {
             receiveID: this.state.receiveID,
             conversation_id: conversationId,
@@ -151,7 +189,8 @@ class RideButton extends Component {
             id: this.props.id,
             token: this.props.token,
             requestId: this.props.request_id,
-            color: this.props.color
+            color: this.props.color,
+            audio: this.state.audio
         })
     }
 
