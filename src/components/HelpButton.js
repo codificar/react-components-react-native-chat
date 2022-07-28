@@ -33,7 +33,8 @@ class HelpButton extends Component {
                         socket_url: this.props.socket_url,
                         id: this.props.id,
                         token: this.props.token,
-                        request_id: this.props.request_id
+                        request_id: this.props.request_id,
+                        audio: this.props.audio,
                     })}
                 >
                     <Image 

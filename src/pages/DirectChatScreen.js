@@ -5,8 +5,9 @@ import {
     Bubble,
     MessageText
 } from 'react-native-gifted-chat';
-import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
+import { View, StyleSheet, BackHandler, Image, RefreshControl, Vibration } from 'react-native';
 import Toolbar from '../components/ToolBar';
+import Sound from "react-native-sound";
 import { getMessageDirectChat, sendMessageDirectChat, responseQuickReply } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
@@ -28,6 +29,9 @@ class DirectChatScreen extends Component {
             messages: [],
             conversation: 0,
             ledger_id: 0,
+            audio: paramRoute.audio,
+            playSound: null,
+            playSoundError: true,
             is_refreshing: false,
         }
 
@@ -49,9 +53,27 @@ class DirectChatScreen extends Component {
 
     componentDidMount() {
         this.backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+            this.unsubscribeSocket();
             this.props.navigation.goBack();
             return true;
         });
+
+        const filenameOrFile = this.state.audio ? this.state.audio : "beep.wav";
+        const basePath = this.state.audio ? null : Sound.MAIN_BUNDLE;
+
+        const sound = new Sound(filenameOrFile, basePath, (error) => {
+            if(error) {
+                console.log('failed to load the sound', error);
+                return;
+            }
+        });
+
+        if(sound) {
+            this.setState({ 
+                playSound: sound,
+                playSoundError: false 
+            })
+        }
     }
 
     unsubscribeSocket() {
@@ -67,6 +89,24 @@ class DirectChatScreen extends Component {
                 })
             }
         }
+    }
+
+    /**
+     * Play the sound request
+     */
+     playSoundRequest() {
+        try {
+            Vibration.vibrate();
+            Sound.setCategory("Playback");
+        
+            if (!this.state.playSoundError) {
+                this.state.playSound.setVolume(1);
+                this.state.playSound.play();
+            }    
+        } catch (e) {
+            console.log('playSound Error:', e);
+        }
+
     }
 
     /**
@@ -113,39 +153,42 @@ class DirectChatScreen extends Component {
                 conversation: formattedArrayMessages[0].conversation_id
             })
             const finalArrayMessages = [];
-            
-            for (let i = 0; i < formattedArrayMessages.length; i++) {
-                let quickReply = JSON.parse(formattedArrayMessages[i].response_quick_reply);
-                if((!!formattedArrayMessages[i].response_quick_reply && quickReply.answered == null)){
-                    
+
+            formattedArrayMessages.map(message => {
+                if(message.response_quick_reply) {
+                    let quickReply = JSON.parse(message.response_quick_reply);
+                    if((!!message.response_quick_reply && quickReply.answered == null)){
+                        finalArrayMessages.unshift({
+                            _id: message.id,
+                            createdAt: message.created_at,
+                            text: message.message,
+                            user: { _id: message.user_id },
+                            image: message.picture ? this.state.url + '/uploads/' + message.picture : null,
+                            quickReplies: {
+                                type: 'radio', // or 'checkbox',
+                                keepIt: true,
+                                values: quickReply.values
+                            }
+                        });
+                    } else {
+                        finalArrayMessages.unshift({
+                            _id: message.id,
+                            createdAt: message.created_at,
+                            text: message.message,
+                            user: { _id: message.user_id },
+                            image: message.picture ? this.state.url + '/uploads/' + message.picture : null                        
+                        });
+                    }
+                } else {
                     finalArrayMessages.unshift({
-                        _id: formattedArrayMessages[i].id,
-                        createdAt: formattedArrayMessages[i].created_at,
-                        text: formattedArrayMessages[i].message,
-                        user: { _id: formattedArrayMessages[i].user_id },
-                        image: formattedArrayMessages[i].picture ? this.state.url + '/uploads/' + formattedArrayMessages[i].picture : null,
-                        quickReplies: {
-                            type: 'radio', // or 'checkbox',
-                            keepIt: true,
-                            values: quickReply.values,
-                            
-                        }
-                        
-                    });
-                } 
-                else {
-                    finalArrayMessages.unshift({
-                        _id: formattedArrayMessages[i].id,
-                        createdAt: formattedArrayMessages[i].created_at,
-                        text: formattedArrayMessages[i].message,
-                        user: { _id: formattedArrayMessages[i].user_id },
-                        image: formattedArrayMessages[i].picture ? this.state.url + '/uploads/' + formattedArrayMessages[i].picture : null                        
+                        _id: message.id,
+                        createdAt: message.created_at,
+                        text: message.message,
+                        user: { _id: message.user_id },
+                        image: message.picture ? this.state.url + '/uploads/' + message.picture : null                        
                     });
                 }
-                
-
-            
-            }
+            });
 
             return finalArrayMessages;
         }
@@ -227,7 +270,7 @@ class DirectChatScreen extends Component {
                     data,
                 );
 
-                const newMessage = {
+                let newMessage = {
                     _id: data.message.id,
                     createdAt: data.message.created_at,
                     text: data.message.message,
@@ -235,6 +278,10 @@ class DirectChatScreen extends Component {
                     received: false,
                     user: { _id: data.message.user_id },
                 };
+
+                if(data.message.user_id !== this.state.userLedgeId) {
+                    this.playSoundRequest();
+                }
 
                 this.setState(state => {
                     if (

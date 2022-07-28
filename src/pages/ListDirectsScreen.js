@@ -31,6 +31,7 @@ class ListDirectsScreen extends Component {
             id: paramRoute.id,
             token: paramRoute.token,
             app_type: paramRoute.app_type,
+            audio: paramRoute.audio,
             conversations: [],
             show_new_conversation: false,
             is_refreshing: false
@@ -81,15 +82,16 @@ class ListDirectsScreen extends Component {
     }
 
     navigateToChatScreen(item) {
-        if (!item.request_id || item.request_id == 0)
+        if (!item.request_id || item.request_id == 0) {
             this.props.navigation.navigate('DirectChatScreen', {
                 url: this.state.url,
                 socket_url: this.state.socket_url,
                 id: this.state.id,
                 token: this.state.token,
-                receiver: item.id
+                receiver: item.id,
+                audio: this.state.audio,
             })
-        else
+        } else {
             this.props.navigation.navigate('RideChatScreen', {
                 conversation_id: item.conversation_id,
                 url: this.state.url,
@@ -97,8 +99,10 @@ class ListDirectsScreen extends Component {
                 id: this.state.id,
                 token: this.state.token,
                 requestId: item.request_id,
-                color: '#687a95'
+                color: '#687a95',
+                audio: this.state.audio,
             });
+        }
     }
 
     render() {

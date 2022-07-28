@@ -147,14 +147,41 @@ class RideChatScreen extends Component {
                     if (formattedArrayMessages.length > 0) {
                         this.setState({ lastIdMessage: formattedArrayMessages[formattedArrayMessages.length - 1].id })
                         let finalArrayMessages = []
-                        for (let i = 0; i < formattedArrayMessages.length; i++) {
-                            finalArrayMessages.unshift({
-                                _id: formattedArrayMessages[i].id,
-                                createdAt: formattedArrayMessages[i].created_at,
-                                text: formattedArrayMessages[i].message,
-                                user: { _id: formattedArrayMessages[i].user_id }
-                            })
-                        }
+                        formattedArrayMessages.map(message => {
+                            if(message.response_quick_reply) {
+                                let quickReply = JSON.parse(message.response_quick_reply);
+                                if((!!message.response_quick_reply && quickReply.answered == null)){
+                                    finalArrayMessages.unshift({
+                                        _id: message.id,
+                                        createdAt: message.created_at,
+                                        text: message.message,
+                                        user: { _id: message.user_id },
+                                        image: message.picture ? this.state.url + '/uploads/' + message.picture : null,
+                                        quickReplies: {
+                                            type: 'radio', // or 'checkbox',
+                                            keepIt: true,
+                                            values: quickReply.values
+                                        }
+                                    });
+                                } else {
+                                    finalArrayMessages.unshift({
+                                        _id: message.id,
+                                        createdAt: message.created_at,
+                                        text: message.message,
+                                        user: { _id: message.user_id },
+                                        image: message.picture ? this.state.url + '/uploads/' + message.picture : null                        
+                                    });
+                                }
+                            } else {
+                                finalArrayMessages.unshift({
+                                    _id: message.id,
+                                    createdAt: message.created_at,
+                                    text: message.message,
+                                    user: { _id: message.user_id },
+                                    image: message.picture ? this.state.url + '/uploads/' + message.picture : null                        
+                                });
+                            }
+                        });
                         this.setState({ messages: finalArrayMessages })
                     }
                     this.setState({ isLoading: false, is_refreshing: false })
