@@ -134,7 +134,7 @@ class RideChatScreen extends Component {
                 let responseJson = response.data
 
                 if (!refresh) {
-                    this.unsubscribeSocketNewConversation()
+                    this.unsubscribeSocketNewConversation();
                     this.subscribeSocket();//subscribe socket new conversation
                 }
 

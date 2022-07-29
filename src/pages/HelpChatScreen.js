@@ -34,17 +34,29 @@ class HelpChatScreen extends Component {
             is_refreshing: false
         }
 
-        this.socket = WebSocketServer.connect(paramRoute.socket_url);
+        if(!WebSocketServer.isConnected) {
+            this.socket = WebSocketServer.connect(paramRoute.socket_url);
+        } else {
+            this.socket = WebSocketServer.socket;
+        }
 
-        this.willBlur = this.props.navigation.addListener("willBlur", () => {
-            
-            this.unsubscribeSocket();
-        })
+        this.willBlur = this.props.navigation.addListener("willBlur", async () => {
+            await this.unsubscribeSocket();
+            await this.unsubscribeSocketNewConversation();
+        });
+
+        this.willFocus = this.props.navigation.addListener("willFocus", async () => {
+            await this.unsubscribeSocketNewConversation();
+            await this.unsubscribeSocket();
+            await this.getMessages();
+            this.subscribeSocket();
+        });
     }
 
     async componentDidMount() {
-        this.backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-            this.unsubscribeSocket();
+        this.backHandler = BackHandler.addEventListener('hardwareBackPress', async () => {
+            await this.unsubscribeSocket();
+            await this.unsubscribeSocketNewConversation();
             this.props.navigation.goBack();
             return true;
         });
@@ -67,11 +79,12 @@ class HelpChatScreen extends Component {
             })
         }
 
-        await this.getMessages();
-        this.subscribeSocket();
+        /*await this.getMessages();
+        this.subscribeSocket();*/
     }
 
-    componentWillUnmount() {
+    async componentWillUnmount() {
+        await this.unsubscribeSocketNewConversation();
 		this.backHandler.remove();
 		this.willBlur.remove();
 	}
@@ -95,15 +108,18 @@ class HelpChatScreen extends Component {
     }
 
 
-    unsubscribeSocket() {
+    async unsubscribeSocketNewConversation() {
+        await this.socket.removeAllListeners("newConversation");
+    }
+
+    async unsubscribeSocket() {
         if (this.socket != null) {
             if (this.state.conversation) {
                 console.log('qweqwe', "conversation." + this.state.conversation);
-                this.socket.removeAllListeners("newConversation")
-                this.socket.removeAllListeners("newMessage")
-                this.socket.removeAllListeners("readMessage")
-                this.socket.removeAllListeners("newConversation")
-                this.socket.emit("unsubscribe", {
+                await this.socket.removeAllListeners("newConversation")
+                await this.socket.removeAllListeners("newMessage")
+                await this.socket.removeAllListeners("readMessage")
+                await this.socket.emit("unsubscribe", {
                     channel: "conversation." + this.state.conversation
                 })
             }
@@ -127,7 +143,7 @@ class HelpChatScreen extends Component {
             this.setState({
                 conversation: response.data.conversation_id
             });
-            this.subscribeSocket();
+            //this.subscribeSocket();
         }
 
         this.setState(previousState => ({
@@ -255,7 +271,7 @@ class HelpChatScreen extends Component {
                     user: { _id: data.message.user_id },
                 };
 
-                if(data.message.user_id !== this.state.userLedgeId) {
+                if(data.message.user_id !== this.state.ledger_id) {
                     this.playSoundRequest();
                 }
 
@@ -330,11 +346,17 @@ class HelpChatScreen extends Component {
         />
     }
 
+    async navigationGoBack() {
+        await this.unsubscribeSocketNewConversation();
+        await this.unsubscribeSocket();
+        this.props.navigation.goBack();
+    }
+
     render() {
         return (
             <View style={styles.container}>
                 <View style={{ marginLeft: 25 }}>
-                    <Toolbar onPress={() => this.props.navigation.goBack()} />
+                    <Toolbar onPress={() => this.navigationGoBack()} />
                 </View>
                 <GiftedChat
                     messages={this.state.messages}
