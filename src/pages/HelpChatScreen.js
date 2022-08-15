@@ -12,6 +12,7 @@ import { getMessageHelpChat, sendMessageHelpChat } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
+import { handlerException } from '../../../../App/Services/Exception';
 
 const send = require('react-native-chat/src/img/send.png');
 
@@ -34,11 +35,7 @@ class HelpChatScreen extends Component {
             is_refreshing: false
         }
 
-        if(!WebSocketServer.isConnected) {
-            this.socket = WebSocketServer.connect(paramRoute.socket_url);
-        } else {
-            this.socket = WebSocketServer.socket;
-        }
+        this.connectSocket();
 
         this.willBlur = this.props.navigation.addListener("willBlur", async () => {
             await this.unsubscribeSocket();
@@ -51,6 +48,18 @@ class HelpChatScreen extends Component {
             await this.getMessages();
             this.subscribeSocket();
         });
+    }
+
+    connectSocket() {
+        try {
+            if (!WebSocketServer.isConnected) {
+                this.socket = WebSocketServer.connect(this.props.socket_url);
+            } else {
+                this.socket = WebSocketServer.socket;
+            }
+        } catch (error) {
+            handlerException('connectSocket - HelpChatScreen', error);
+        }
     }
 
     async componentDidMount() {

@@ -11,6 +11,7 @@ import { getConversation } from '../services/api';
 import WebSocketServer from "../services/socket";
 import Sound from "react-native-sound";
 import Badger from './Badger';
+import { handlerException } from '../../../../App/Services/Exception';
 
 const icon = require('react-native-chat/src/img/chat.png');
 
@@ -27,11 +28,7 @@ class RideButton extends Component {
             playSoundError: true,
         }
 
-        if(!WebSocketServer.isConnected) {
-            this.socket = WebSocketServer.connect(this.props.socket_url);
-        } else {
-            this.socket = WebSocketServer.socket;
-        }
+        this.connectSocket();
 
         this.willFocus = this.props.navigation.addListener("willFocus", async () => {
             await this.getConversation();
@@ -42,6 +39,18 @@ class RideButton extends Component {
 			await this.unsubscribeSocket();
 			await this.unsubscribeSocketNewConversation();
 		});
+    }
+
+    connectSocket() {
+        try {
+            if (!WebSocketServer.isConnected) {
+                this.socket = WebSocketServer.connect(this.props.socket_url);
+            } else {
+                this.socket = WebSocketServer.socket;
+            }
+        } catch (error) {
+            handlerException('connectSocket - RideButton', error);
+        }
     }
 
     componentDidMount() {

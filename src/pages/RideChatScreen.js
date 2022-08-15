@@ -22,6 +22,7 @@ import { getMessageChat, seeMessage, sendMessage } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
+import { handlerException } from '../../../../App/Services/Exception';
 
 const send = require('react-native-chat/src/img/send.png');
 var color = '#FBFBFB';
@@ -57,11 +58,7 @@ class RideChatScreen extends Component {
 
         color = paramRoute.color;
 
-        if(!WebSocketServer.isConnected) {
-            this.socket = WebSocketServer.connect(this.props.socket_url);
-        } else {
-            this.socket = WebSocketServer.socket;
-        }
+        this.connectSocket();
 
         this.willBlur = this.props.navigation.addListener("willBlur", async () => {
             await this.unsubscribeSocket();
@@ -72,6 +69,18 @@ class RideChatScreen extends Component {
             await this.getConversation();
         });
         
+    }
+
+    connectSocket() {
+        try {
+            if (!WebSocketServer.isConnected) {
+                this.socket = WebSocketServer.connect(this.props.socket_url);
+            } else {
+                this.socket = WebSocketServer.socket;
+            }
+        } catch (error) {
+            handlerException('connectSocket - RideChatScreen', error);
+        }
     }
 
     componentDidMount() {
@@ -85,19 +94,7 @@ class RideChatScreen extends Component {
         const filenameOrFile = this.state.audio ? this.state.audio : "beep.wav";
         const basePath = this.state.audio ? null : Sound.MAIN_BUNDLE;
 
-        const sound = new Sound(filenameOrFile, basePath, (error) => {
-            if(error) {
-                console.log('failed to load the sound', error);
-                return;
-            }
-        });
-
-        if(sound) {
-            this.setState({ 
-                playSound: sound,
-                playSoundError: false 
-            })
-        }
+        this.setSound(filenameOrFile, basePath);
 
         const timer = setTimeout(() => {
             this.subscribeSocketNewConversation(this.state.requestId)
@@ -105,6 +102,26 @@ class RideChatScreen extends Component {
         return () => clearTimeout(timer);
 
 
+    }
+
+    setSound(filenameOrFile, basePath) {
+        try {
+            const sound = new Sound(filenameOrFile, basePath, (error) => {
+                if (error) {
+                    console.log('failed to load the sound', error);
+                    return;
+                }
+            });
+    
+            if (sound) {
+                this.setState({
+                    playSound: sound,
+                    playSoundError: false
+                });
+            }
+        } catch (error) {
+            handlerException('setSound', error);
+        }
     }
 
     componentWillUnmount() {
