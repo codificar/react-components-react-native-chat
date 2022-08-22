@@ -22,6 +22,7 @@ import { getMessageChat, seeMessage, sendMessage } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
+import { handlerException } from '../../../../App/Services/Exception';
 
 const send = require('react-native-chat/src/img/send.png');
 var color = '#FBFBFB';
@@ -35,6 +36,7 @@ class RideChatScreen extends Component {
             idBotMessage: 1,
             typingText: null,
             valueMessage: false,
+            isUserName: false,
             isMessageValue: false,
             userLedgeId: '',
             requestId: paramRoute.requestId,
@@ -57,11 +59,7 @@ class RideChatScreen extends Component {
 
         color = paramRoute.color;
 
-        if(!WebSocketServer.isConnected) {
-            this.socket = WebSocketServer.connect(this.props.socket_url);
-        } else {
-            this.socket = WebSocketServer.socket;
-        }
+        this.connectSocket();
 
         this.willBlur = this.props.navigation.addListener("willBlur", async () => {
             await this.unsubscribeSocket();
@@ -72,6 +70,18 @@ class RideChatScreen extends Component {
             await this.getConversation();
         });
         
+    }
+
+    connectSocket() {
+        try {
+            if (!WebSocketServer.isConnected) {
+                this.socket = WebSocketServer.connect(this.props.socket_url);
+            } else {
+                this.socket = WebSocketServer.socket;
+            }
+        } catch (error) {
+            handlerException('connectSocket - RideChatScreen', error);
+        }
     }
 
     componentDidMount() {
@@ -85,19 +95,7 @@ class RideChatScreen extends Component {
         const filenameOrFile = this.state.audio ? this.state.audio : "beep.wav";
         const basePath = this.state.audio ? null : Sound.MAIN_BUNDLE;
 
-        const sound = new Sound(filenameOrFile, basePath, (error) => {
-            if(error) {
-                console.log('failed to load the sound', error);
-                return;
-            }
-        });
-
-        if(sound) {
-            this.setState({ 
-                playSound: sound,
-                playSoundError: false 
-            })
-        }
+        this.setSound(filenameOrFile, basePath);
 
         const timer = setTimeout(() => {
             this.subscribeSocketNewConversation(this.state.requestId)
@@ -105,6 +103,26 @@ class RideChatScreen extends Component {
         return () => clearTimeout(timer);
 
 
+    }
+
+    setSound(filenameOrFile, basePath) {
+        try {
+            const sound = new Sound(filenameOrFile, basePath, (error) => {
+                if (error) {
+                    console.log('failed to load the sound', error);
+                    return;
+                }
+            });
+    
+            if (sound) {
+                this.setState({
+                    playSound: sound,
+                    playSoundError: false
+                });
+            }
+        } catch (error) {
+            handlerException('setSound', error);
+        }
     }
 
     componentWillUnmount() {
@@ -147,6 +165,21 @@ class RideChatScreen extends Component {
                     if (formattedArrayMessages.length > 0) {
                         this.setState({ lastIdMessage: formattedArrayMessages[formattedArrayMessages.length - 1].id })
                         let finalArrayMessages = []
+                        
+                        // verifiar se o username foi passado
+                        if(formattedArrayMessages.some(
+                            value =>  {
+                                if (value.hasOwnProperty('user_name') && 
+                                    value.user_name != undefined && 
+                                    value.user_name != null && 
+                                    value.user_name != '') {
+                                        return true; 
+                                    }
+                            })
+                        ); {
+                            this.setState({isUserName: true});
+                        }
+                        
                         formattedArrayMessages.map(message => {
                             if(message.response_quick_reply) {
                                 let quickReply = JSON.parse(message.response_quick_reply);
@@ -155,7 +188,10 @@ class RideChatScreen extends Component {
                                         _id: message.id,
                                         createdAt: message.created_at,
                                         text: message.message,
-                                        user: { _id: message.user_id },
+                                        user: { 
+                                            _id: message.user_id,
+                                            name: message.user_name ? message.user_name : ''
+                                        },
                                         image: message.picture ? this.state.url + '/uploads/' + message.picture : null,
                                         quickReplies: {
                                             type: 'radio', // or 'checkbox',
@@ -168,7 +204,10 @@ class RideChatScreen extends Component {
                                         _id: message.id,
                                         createdAt: message.created_at,
                                         text: message.message,
-                                        user: { _id: message.user_id },
+                                        user: { 
+                                            _id: message.user_id,
+                                            name: message.user_name ? message.user_name : ''
+                                        },
                                         image: message.picture ? this.state.url + '/uploads/' + message.picture : null                        
                                     });
                                 }
@@ -177,7 +216,10 @@ class RideChatScreen extends Component {
                                     _id: message.id,
                                     createdAt: message.created_at,
                                     text: message.message,
-                                    user: { _id: message.user_id },
+                                    user: { 
+                                        _id: message.user_id,
+                                        name: message.user_name ? message.user_name : ''
+                                    },
                                     image: message.picture ? this.state.url + '/uploads/' + message.picture : null                        
                                 });
                             }
@@ -278,7 +320,10 @@ class RideChatScreen extends Component {
                     text: data.message.message,
                     sent: true,
                     received: false,
-                    user: { _id: data.message.user_id }
+                    user: { 
+                        _id: data.message.user_id,
+                        name: data.message.user_name ? data.message.user_name : ''
+                    }
                 }
 
                 if(data.message.user_id !== this.state.userLedgeId) {
@@ -471,6 +516,7 @@ class RideChatScreen extends Component {
                     dateFormat='L'
                     onSend={messages => this.onSend(messages)}
                     user={{ _id: this.state.userLedgeId }}
+                    renderUsernameOnMessage={this.state.isUserName}
                     renderSend={this.renderSend}
                     renderDay={this.renderDay}
                     renderBubble={this.renderBubble}

@@ -13,6 +13,7 @@ import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
 import QuickReplies from 'react-native-gifted-chat/lib/QuickReplies';
+import { handlerException } from '../../../../App/Services/Exception';
 
 const send = require('react-native-chat/src/img/send.png');
 
@@ -35,11 +36,7 @@ class DirectChatScreen extends Component {
             is_refreshing: false,
         }
 
-        if(!WebSocketServer.isConnected) {
-            this.socket = WebSocketServer.connect(paramRoute.socket_url);
-        } else {
-            this.socket = WebSocketServer.socket;
-        }
+        this.connectSocket();
 
         this.willBlur = this.props.navigation.addListener("willBlur", async () => {
             await this.unsubscribeSocket();
@@ -54,6 +51,18 @@ class DirectChatScreen extends Component {
         });
 
         this.getMessages();
+    }
+
+    connectSocket() {
+        try {
+            if (!WebSocketServer.isConnected) {
+                this.socket = WebSocketServer.connect(this.props.socket_url);
+            } else {
+                this.socket = WebSocketServer.socket;
+            }
+        } catch (error) {
+            handlerException('connectSocket - DirectChatScreen', error);
+        }
     }
 
     componentDidMount() {
