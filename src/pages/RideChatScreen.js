@@ -67,12 +67,13 @@ class RideChatScreen extends Component {
         })
 
         this.willFocus = this.props.navigation.addListener("willFocus", async () => {
+            await this.connectSocket();
             await this.getConversation();
         });
         
     }
 
-    connectSocket() {
+    async connectSocket() {
         try {
             if (!WebSocketServer.isConnected) {
                 this.socket = WebSocketServer.connect(this.props.socket_url);
@@ -98,7 +99,7 @@ class RideChatScreen extends Component {
         this.setSound(filenameOrFile, basePath);
 
         const timer = setTimeout(() => {
-            this.subscribeSocketNewConversation(this.state.requestId)
+            this.subscribeSocket()
         }, 1002);
         return () => clearTimeout(timer);
 
@@ -325,17 +326,20 @@ class RideChatScreen extends Component {
                         name: data.message.user_name ? data.message.user_name : ''
                     }
                 }
-
-                if(data.message.user_id !== this.state.userLedgeId) {
+                
+                const isAdminOrCorp = data.message.admin_id && data.message.admin_id !== this.state.userLedgeId;
+                const isMessageAlert = data.message.user_id && this.state.userLedgeId && 
+                    parseInt(data.message.user_id) !== parseInt(this.state.userLedgeId);
+                const isNewMessage = this.state.messages && 
+                    !this.state.messages.some((message) => message._id === newMessage._id) && 
+                    ( isMessageAlert || isAdminOrCorp);
+                
+                if (isMessageAlert) {
                     this.playSoundRequest();
                 }
 
                 this.setState(state => {
-                    if (
-                        newMessage._id !==
-                        state.messages[state.messages.length - 1]._id &&
-                        data.message.user_id !== state.userLedgeId
-                    ) {
+                    if (isNewMessage) {
                         return {
                             messages: GiftedChat.append(state.messages, newMessage),
                         };
