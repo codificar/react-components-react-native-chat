@@ -11,7 +11,7 @@
         "url": "git+https://git.codificar.com.br/react-components/react-native-chat"
     },
     "dependencies": {
-        "react-native-gifted-chat": "^0.16.3",
+        "react-native-gifted-chat": "^1.0.4",
         "react-native-sound": "^0.11.2",
         "react-native-status-bar-height": "^2.5.0"
     },
