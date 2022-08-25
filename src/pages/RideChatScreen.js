@@ -36,7 +36,6 @@ class RideChatScreen extends Component {
             idBotMessage: 1,
             typingText: null,
             valueMessage: false,
-            isUserName: false,
             isMessageValue: false,
             userLedgeId: '',
             requestId: paramRoute.requestId,
@@ -167,20 +166,6 @@ class RideChatScreen extends Component {
                         this.setState({ lastIdMessage: formattedArrayMessages[formattedArrayMessages.length - 1].id })
                         let finalArrayMessages = []
                         
-                        // verifiar se o username foi passado
-                        if(formattedArrayMessages.some(
-                            value =>  {
-                                if (value.hasOwnProperty('user_name') && 
-                                    value.user_name != undefined && 
-                                    value.user_name != null && 
-                                    value.user_name != '') {
-                                        return true; 
-                                    }
-                            })
-                        ); {
-                            this.setState({isUserName: true});
-                        }
-                        
                         formattedArrayMessages.map(message => {
                             if(message.response_quick_reply) {
                                 let quickReply = JSON.parse(message.response_quick_reply);
@@ -190,8 +175,7 @@ class RideChatScreen extends Component {
                                         createdAt: message.created_at,
                                         text: message.message,
                                         user: { 
-                                            _id: message.user_id,
-                                            name: message.user_name ? message.user_name : ''
+                                            _id: message.user_id
                                         },
                                         image: message.picture ? this.state.url + '/uploads/' + message.picture : null,
                                         quickReplies: {
@@ -206,8 +190,7 @@ class RideChatScreen extends Component {
                                         createdAt: message.created_at,
                                         text: message.message,
                                         user: { 
-                                            _id: message.user_id,
-                                            name: message.user_name ? message.user_name : ''
+                                            _id: message.user_id
                                         },
                                         image: message.picture ? this.state.url + '/uploads/' + message.picture : null                        
                                     });
@@ -218,8 +201,7 @@ class RideChatScreen extends Component {
                                     createdAt: message.created_at,
                                     text: message.message,
                                     user: { 
-                                        _id: message.user_id,
-                                        name: message.user_name ? message.user_name : ''
+                                        _id: message.user_id
                                     },
                                     image: message.picture ? this.state.url + '/uploads/' + message.picture : null                        
                                 });
@@ -322,8 +304,7 @@ class RideChatScreen extends Component {
                     sent: true,
                     received: false,
                     user: { 
-                        _id: data.message.user_id,
-                        name: data.message.user_name ? data.message.user_name : ''
+                        _id: data.message.user_id
                     }
                 }
                 
