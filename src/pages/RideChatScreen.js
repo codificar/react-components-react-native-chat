@@ -520,7 +520,7 @@ class RideChatScreen extends Component {
                     dateFormat='L'
                     onSend={messages => this.onSend(messages)}
                     user={{ _id: this.state.userLedgeId }}
-                    renderUsernameOnMessage={this.state.isUserName}
+                    renderUsernameOnMessage={false}
                     renderSend={this.renderSend}
                     renderDay={this.renderDay}
                     renderBubble={this.renderBubble}
