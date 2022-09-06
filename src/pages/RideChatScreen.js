@@ -279,7 +279,6 @@ class RideChatScreen extends Component {
                         this.setState({
                             conversation_id: data.conversation_id
                         })
-                        //this.playSoundRequest();
                         this.getConversation();
                     })
             }
@@ -314,10 +313,6 @@ class RideChatScreen extends Component {
                 const isNewMessage = this.state.messages && 
                     !this.state.messages.some((message) => message._id === newMessage._id) && 
                     ( isMessageAlert || isAdminOrCorp);
-                
-                if (isMessageAlert) {
-                    this.playSoundRequest();
-                }
 
                 this.setState(state => {
                     if (isNewMessage) {

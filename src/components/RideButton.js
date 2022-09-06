@@ -80,8 +80,6 @@ class RideButton extends Component {
 		this.socket
 			.emit("subscribe", { channel: "conversation." + id })
 			.on("newMessage", (channel, data) => {
-
-				this.playSoundRequest();
                 this.setState({
                     contNewMensag: this.state.contNewMensag + 1
                 });
@@ -97,7 +95,6 @@ class RideButton extends Component {
                         conversation_id: data.conversation_id,
                         contNewMensag: 1
                     });
-					//this.playSoundRequest()
 					console.log('Evento socket newConversation disparado! ', channel, data)
 				})
 		} catch (error) {
