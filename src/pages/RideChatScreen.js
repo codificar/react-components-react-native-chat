@@ -80,7 +80,7 @@ class RideChatScreen extends Component {
                 this.socket = WebSocketServer.socket;
             }
         } catch (error) {
-            handlerException('connectSocket - RideChatScreen', error);
+            handlerException('connectSocket - RideChatScreen - connectSocket(): ', error);
         }
     }
 
@@ -98,7 +98,7 @@ class RideChatScreen extends Component {
         this.setSound(filenameOrFile, basePath);
 
         const timer = setTimeout(() => {
-            this.subscribeSocket()
+            this.subscribeSocket();
         }, 1002);
         return () => clearTimeout(timer);
 
@@ -121,7 +121,7 @@ class RideChatScreen extends Component {
                 });
             }
         } catch (error) {
-            handlerException('setSound', error);
+            handlerException('confiSound - RideChatScreen - setSound(): ', error);
         }
     }
 
@@ -241,8 +241,8 @@ class RideChatScreen extends Component {
                 this.state.playSound.setVolume(1);
                 this.state.playSound.play();
             }    
-        } catch (e) {
-            console.log('playSound Error:', e);
+        } catch (error) {
+            handlerException('playSound - RideButton - playSoundRequest:', error);
         }
 
     }
@@ -279,71 +279,87 @@ class RideChatScreen extends Component {
                         this.setState({
                             conversation_id: data.conversation_id
                         })
+                        //this.playSoundRequest();
                         this.getConversation();
                     })
             }
         } catch (error) {
-            console.log('Erro subscribeSocketNewConversation:', error)
+            handlerException('connectSocket - RideChatScreen - subscribeSocketNewConversation()', error);
         }
     }
     
     subscribeSocket() {
         console.log('this.state.conversationId', this.state.conversation_id)
+        try {
+            this.socket
+                .emit("subscribe", { channel: "conversation." + this.state.conversation_id })
+                .on("newMessage", (channel, data) => {
 
-        this.socket
-            .emit("subscribe", { channel: "conversation." + this.state.conversation_id })
-            .on("newMessage", (channel, data) => {
+                    console.log('Evento socket newMessage disparado! ', channel, data)
 
-                console.log('Evento socket newMessage disparado! ', channel, data)
-
-                let newMessage = {
-                    _id: data.message.id,
-                    createdAt: data.message.created_at,
-                    text: data.message.message,
-                    sent: true,
-                    received: false,
-                    user: { 
-                        _id: data.message.user_id
+                    let newMessage = {
+                        _id: data.message.id,
+                        createdAt: data.message.created_at,
+                        text: data.message.message,
+                        sent: true,
+                        received: false,
+                        user: { 
+                            _id: data.message.user_id
+                        }
                     }
-                }
-                
-                const isAdminOrCorp = data.message.admin_id && data.message.admin_id !== this.state.userLedgeId;
-                const isMessageAlert = data.message.user_id && this.state.userLedgeId && 
-                    parseInt(data.message.user_id) !== parseInt(this.state.userLedgeId);
-                const isNewMessage = this.state.messages && 
-                    !this.state.messages.some((message) => message._id === newMessage._id) && 
-                    ( isMessageAlert || isAdminOrCorp);
-
-                this.setState(state => {
-                    if (isNewMessage) {
-                        return {
-                            messages: GiftedChat.append(state.messages, newMessage),
-                        };
+                    
+                    const isAdminOrCorp = data.message.admin_id && data.message.admin_id !== this.state.userLedgeId;
+                    const isMessageAlert = data.message.user_id && this.state.userLedgeId && 
+                        parseInt(data.message.user_id) !== parseInt(this.state.userLedgeId);
+                    const isNewMessage = this.state.messages && 
+                        !this.state.messages.some((message) => message._id === newMessage._id) && 
+                        ( isMessageAlert || isAdminOrCorp);
+                    
+                    if (isMessageAlert) {
+                        //this.playSoundRequest();
                     }
-                });
 
-                this.setState({ lastIdMessage: data.message.id });
-                if (data.message.is_seen == 0 && data.message.user_id !== this.props.ledger) {
-                    this.seeMessage();
-                }
-            })
+                    this.setState(state => {
+                        if (isNewMessage) {
+                            return {
+                                messages: GiftedChat.append(state.messages, newMessage),
+                            };
+                        }
+                    });
+
+                    this.setState({ lastIdMessage: data.message.id });
+                    if (data.message.is_seen == 0 && data.message.user_id !== this.props.ledger) {
+                        this.seeMessage();
+                    }
+                })
+        }  catch (error) {
+            handlerException('connectSocket - RideChatScreen - subscribeSocket()', error);
+        }
     }
 
     async unsubscribeSocket() {
         if (this.socket != null) {
             if (this.state.conversation_id) {
-                this.socket.removeAllListeners("newConversation")
-                this.socket.removeAllListeners("newMessage")
-                this.socket.removeAllListeners("readMessage")
-                this.socket.emit("unsubscribe", {
-                    channel: "conversation." + this.state.conversation_id
-                })
+                try {
+                    this.socket.removeAllListeners("newConversation")
+                    this.socket.removeAllListeners("newMessage")
+                    this.socket.removeAllListeners("readMessage")
+                    this.socket.emit("unsubscribe", {
+                        channel: "conversation." + this.state.conversation_id
+                    })
+                } catch (error) {
+                    handlerException('connectSocket - RideChatScreen - unsubscribeSocket()', error);
+                }
             }
         }
     }
 
     async unsubscribeSocketNewConversation() {
-        this.socket.removeAllListeners("newConversation");
+        try {
+            this.socket.removeAllListeners("newConversation");
+        }  catch (error) {
+            handlerException('connectSocket - RideChatScreen - unsubscribeSocketNewConversation()', error);
+        }
     }
 
     /**

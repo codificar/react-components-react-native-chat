@@ -50,7 +50,7 @@ class RideButton extends Component {
                 this.socket = WebSocketServer.socket;
             }
         } catch (error) {
-            handlerException('connectSocket - RideButton', error);
+            handlerException('connectSocket - RideButton - connectSocket(): ', error);
         }
     }
 
@@ -72,18 +72,29 @@ class RideButton extends Component {
                 playSoundError: false 
             })
         }
+
+        const timer = setTimeout(() => {
+            this.subscribeSocketConversation(this.props.request_id);
+        }, 1002);
+        return () => clearTimeout(timer);
         
     }
 
     subscribeSocketConversation(id) {
 		console.log('subscribeSocketConversation', id)
-		this.socket
-			.emit("subscribe", { channel: "conversation." + id })
-			.on("newMessage", (channel, data) => {
-                this.setState({
-                    contNewMensag: this.state.contNewMensag + 1
-                });
-			})
+        try {
+            this.socket
+                .emit("subscribe", { channel: "conversation." + id })
+                .on("newMessage", (channel, data) => {
+    
+                    //this.playSoundRequest();
+                    this.setState({
+                        contNewMensag: this.state.contNewMensag + 1
+                    });
+                })
+        } catch (error) {
+            handlerException('connectSocket - RideButton - subscribeSocketConversation():', error);
+		}
 	}
 
     subscribeSocketNewConversation(id_request) {
@@ -95,27 +106,37 @@ class RideButton extends Component {
                         conversation_id: data.conversation_id,
                         contNewMensag: 1
                     });
+					//this.playSoundRequest()
 					console.log('Evento socket newConversation disparado! ', channel, data)
 				})
 		} catch (error) {
-			console.log('Erro subscribeSocketNewConversation:', error)
+            handlerException('connectSocket - RideButton - subscribeSocketNewConversation():', error);
 		}
     }
 
     async unsubscribeSocketNewConversation() {
-        this.socket.removeAllListeners("newConversation");
+        try {
+            this.socket.removeAllListeners("newConversation");
+        } catch (error) {
+            handlerException('connectSocket - RideButton - unsubscribeSocketNewConversation():', error);
+        }
     }
 
     async unsubscribeSocket() {
         if (this.socket != null) {
             if (this.state.conversation_id) {
-                this.socket.removeAllListeners("newConversation")
-                this.socket.removeAllListeners("newMessage")
-                this.socket.removeAllListeners("readMessage")
-                this.socket.removeAllListeners("newConversation")
-                this.socket.emit("unsubscribe", {
-                    channel: "conversation." + this.state.conversation_id
-                })
+                try {
+                    this.socket.removeAllListeners("newConversation")
+                    this.socket.removeAllListeners("newMessage")
+                    this.socket.removeAllListeners("readMessage")
+                    this.socket.removeAllListeners("newConversation")
+                    this.socket.emit("unsubscribe", {
+                        channel: "conversation." + this.state.conversation_id
+                    })
+                } catch (error) {
+                    handlerException('connectSocket - RideButton - unsubscribeSocket():', error);
+                }
+
             }
         }
     }
@@ -132,8 +153,8 @@ class RideButton extends Component {
                 this.state.playSound.setVolume(1);
                 this.state.playSound.play();
             }    
-        } catch (e) {
-            console.log('playSound Error:', e);
+        } catch (error) {
+            handlerException('playSound - RideButton - playSoundRequest():', error);
         }
 
     }
