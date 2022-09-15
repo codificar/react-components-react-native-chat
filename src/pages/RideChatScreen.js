@@ -69,6 +69,14 @@ class RideChatScreen extends Component {
             await this.connectSocket();
             await this.getConversation();
         });
+
+        if (!paramRoute.conversation_id || paramRoute.conversation_id == 0) {
+            const message = [{
+                text: strings.welcome_message 
+            }];
+
+            this.onSend(message);
+        }
         
     }
 
@@ -101,8 +109,6 @@ class RideChatScreen extends Component {
             this.subscribeSocket();
         }, 1002);
         return () => clearTimeout(timer);
-
-
     }
 
     setSound(filenameOrFile, basePath) {

@@ -79,7 +79,7 @@ export function sendMessage(
         message: message,
         receiver_id: receiver_id,
         type: type,
-        conversationId: conversationId 
+        conversation_id: conversationId 
     });
 }
 
