@@ -497,6 +497,10 @@ class RideChatScreen extends Component {
         )
     }
 
+    // to remove init message 
+    filteredMessages = (messages) => {
+        return messages.filter(e => { return e.text !== 'init_message' });
+    }
 
     /**
      * Mount RefreshControl
@@ -517,7 +521,7 @@ class RideChatScreen extends Component {
                     <Toolbar onPress={() => this.props.navigation.goBack()} />
                 </View>
                 <GiftedChat
-                    messages={this.state.messages}
+                    messages={this.filteredMessages(this.state.messages)}
                     placeholder={strings.send_message}
                     locale='pt'
                     dateFormat='L'
