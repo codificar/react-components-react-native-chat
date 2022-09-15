@@ -361,6 +361,11 @@ class HelpChatScreen extends Component {
         this.props.navigation.goBack();
     }
 
+    // to remove init message 
+    filteredMessages = (messages) => {
+        return messages.filter(e => { return e.text !== 'init_message' });
+    }
+
     render() {
         return (
             <View style={styles.container}>
@@ -368,7 +373,7 @@ class HelpChatScreen extends Component {
                     <Toolbar onPress={() => this.navigationGoBack()} />
                 </View>
                 <GiftedChat
-                    messages={this.state.messages}
+                    messages={this.filteredMessages(this.state.messages)}
                     placeholder={strings.send_message}
                     locale="pt"
                     onSend={messages => this.onSend(messages)}
