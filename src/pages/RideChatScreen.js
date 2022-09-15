@@ -371,6 +371,10 @@ class RideChatScreen extends Component {
             console.log('onSend messages: ', messages)
             let type = 'text'
             let formatted = messages[0].text
+            let conversationId = 0;
+            if(this.state.conversation_id) {
+                conversationId = this.state.conversation_id;
+            }
             console.log('response send message: ', this.state.receiveID)
             const response = await sendMessage(
                 this.state.url,
@@ -379,7 +383,8 @@ class RideChatScreen extends Component {
                 this.state.requestId,
                 formatted,
                 this.state.receiveID,
-                type
+                type,
+                conversationId,
             )
 
             var responseJson = response.data

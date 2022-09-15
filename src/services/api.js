@@ -69,7 +69,8 @@ export function sendMessage(
     request_id,
     message,
     receiver_id,
-    type = 'text'
+    type = 'text',
+    conversationId = 0
 ) {
     return axios.post(`${url}/api/libs/chat/send`, {
         id: id,
@@ -77,7 +78,8 @@ export function sendMessage(
         request_id: request_id,
         message: message,
         receiver_id: receiver_id,
-        type: type
+        type: type,
+        conversationId: conversationId 
     });
 }
 
