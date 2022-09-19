@@ -162,15 +162,12 @@ class RideButton extends Component {
     async getConversation() {
 		try {
 			const data = await this.callApiConversation();
-            console.log('getConversation', data);
-
-            this.subscribeSocketConversation(data.id);
-            
 			this.setState({
                 receiveID: data.user.id,
                 conversation_id: data.id,
                 contNewMensag: data.new_messages
 			})
+            this.subscribeSocketConversation(data.id);
 
 		} catch (error) {
 			console.log('Erro getConversation:', error)
@@ -204,7 +201,6 @@ class RideButton extends Component {
         if (conversationId == 0) {
             const data = await this.callApiConversation();
             conversationId = data.id;
-            console.log('conversationId', conversationId);
         }
 
         this.unsubscribeSocket();

@@ -6,7 +6,8 @@ import {
     Vibration,
     StyleSheet,
     Image,
-    RefreshControl
+    RefreshControl,
+    Text
 } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import Sound from "react-native-sound";
@@ -18,7 +19,7 @@ import {
     Time, 
     Day 
 } from 'react-native-gifted-chat';
-import { getMessageChat, seeMessage, sendMessage } from '../services/api';
+import { getConversation, getMessageChat, seeMessage, sendMessage } from '../services/api';
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
@@ -54,6 +55,7 @@ class RideChatScreen extends Component {
             color: paramRoute.color,
             contNewMensag: 0,
             is_refreshing: false,
+            intervalConversation: null,
         }
 
         color = paramRoute.color;
@@ -63,20 +65,14 @@ class RideChatScreen extends Component {
         this.willBlur = this.props.navigation.addListener("willBlur", async () => {
             await this.unsubscribeSocket();
             await this.unsubscribeSocketNewConversation();
+            this.clearIntervalConverstaion();
         })
 
         this.willFocus = this.props.navigation.addListener("willFocus", async () => {
             await this.connectSocket();
             await this.getConversation();
         });
-
-        if (!paramRoute.conversation_id || paramRoute.conversation_id == 0) {
-            const message = [{
-                text: strings.welcome_message 
-            }];
-
-            this.onSend(message);
-        }
+        
         
     }
 
@@ -108,7 +104,24 @@ class RideChatScreen extends Component {
         const timer = setTimeout(() => {
             this.subscribeSocket();
         }, 1002);
-        return () => clearTimeout(timer);
+
+
+        let intervalConversation = null;
+        if(!this.state.conversation_id || this.state.conversation_id == 0) {
+            intervalConversation = setInterval(async () => {
+                await this.callApiConversation();
+            }, 5000);
+
+        }
+
+        this.setState({
+            intervalConversation
+        });
+        
+        return () => {
+            clearTimeout(timer);
+            clearInterval(intervalConversation);
+        };
     }
 
     setSound(filenameOrFile, basePath) {
@@ -136,11 +149,42 @@ class RideChatScreen extends Component {
             this.unsubscribeSocket();
             this.unsubscribeSocketNewConversation();
             this.backHandler.remove();
+            this.clearIntervalConverstaion();
         } catch (error) {
             console.log('this.componentWillUnmount Error:', error);
         }
-    
       }
+
+    async callApiConversation() {
+        try {
+            const response = await getConversation(
+                this.state.url,
+                this.state.id,
+                this.state.token,
+                this.state.requestId
+            );
+            const { data } = response;
+            
+            if(data && data.conversations
+                && data.conversations.length > 0
+                && data.conversations[0].id
+                && (!this.state.conversation_id || this.state.conversation_id == 0)
+            ) {
+                this.setState({ conversation_id: data.conversations[0].id });
+                this.getConversation();
+                this.clearIntervalConverstaion();
+            }
+        } catch (error) {
+            handlerException('Chatlib - RideChatScreen - callApiConversation:', error);
+        }
+    }
+
+    clearIntervalConverstaion() {
+        clearInterval(this.state.intervalConversation);
+        this.setState({
+            intervalConversation: null
+        });
+    }
 
     async getConversation(refresh = false) {
         this.setState({ isLoading: true, is_refreshing: true })
@@ -301,8 +345,6 @@ class RideChatScreen extends Component {
                 .emit("subscribe", { channel: "conversation." + this.state.conversation_id })
                 .on("newMessage", (channel, data) => {
 
-                    console.log('Evento socket newMessage disparado! ', channel, data)
-
                     let newMessage = {
                         _id: data.message.id,
                         createdAt: data.message.created_at,
@@ -374,14 +416,14 @@ class RideChatScreen extends Component {
      */
     async onSend(messages = []) {
         try {
-            console.log('onSend messages: ', messages)
-            let type = 'text'
-            let formatted = messages[0].text
+            
+            let type = 'text';
+            let formatted = messages[0].text;
             let conversationId = 0;
             if(this.state.conversation_id) {
                 conversationId = this.state.conversation_id;
             }
-            console.log('response send message: ', this.state.receiveID)
+            
             const response = await sendMessage(
                 this.state.url,
                 this.state.id,
@@ -391,9 +433,9 @@ class RideChatScreen extends Component {
                 this.state.receiveID,
                 type,
                 conversationId,
-            )
+            );
 
-            var responseJson = response.data
+            var responseJson = response.data;
             console.log('response send message: ', responseJson)
 
             if (responseJson.success) {
@@ -497,11 +539,6 @@ class RideChatScreen extends Component {
         )
     }
 
-    // to remove init message 
-    filteredMessages = (messages) => {
-        return messages.filter(e => { return e.text !== 'init_message' });
-    }
-
     /**
      * Mount RefreshControl
      */
@@ -514,14 +551,20 @@ class RideChatScreen extends Component {
     }
 
     render() {
-
+        const isConversation = this.state.conversation_id && this.state.conversation_id != 0;
         return (
             <View style={styles.container}>
                 <View style={{ marginLeft: 25 }}>
                     <Toolbar onPress={() => this.props.navigation.goBack()} />
                 </View>
+                { !isConversation 
+                    ? ( <View style={styles.containerNoConversation}>
+                            <Text style={styles.textNoConversation}> Chat ainda não iniciado. Envie uma mensagem para iniciar. </Text>
+                        </View>)
+                    : null
+                }                
                 <GiftedChat
-                    messages={this.filteredMessages(this.state.messages)}
+                    messages={this.state.messages}
                     placeholder={strings.send_message}
                     locale='pt'
                     dateFormat='L'
@@ -587,6 +630,19 @@ const styles = StyleSheet.create({
         marginTop: 10,
         elevation: 5,
     },
+    containerNoConversation: {
+        margin: 25, 
+        padding: 5, 
+        borderRadius: 5, 
+        backgroundColor: '#687a95', 
+        display: 'flex', 
+        justifyContent: 'center' 
+    },
+    textNoConversation: {
+        fontSize: 18, 
+        textAlign: 'center', 
+        color: '#FFF'
+    }
 });
 
 export default withNavigation(RideChatScreen);
