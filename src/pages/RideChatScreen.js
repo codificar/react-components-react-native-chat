@@ -78,10 +78,10 @@ class RideChatScreen extends Component {
 
     async connectSocket() {
         try {
+            if(WebSocketServer.socket !== undefined && WebSocketServer.socket != null)
+                return;
             if (!WebSocketServer.isConnected) {
-                this.socket = WebSocketServer.connect(this.props.socket_url);
-            } else {
-                this.socket = WebSocketServer.socket;
+                WebSocketServer.socket = WebSocketServer.connect(this.props.socket_url);
             }
         } catch (error) {
             handlerException('connectSocket - RideChatScreen - connectSocket(): ', error);
@@ -101,8 +101,9 @@ class RideChatScreen extends Component {
 
         this.setSound(filenameOrFile, basePath);
 
-        const timer = setTimeout(() => {
-            this.subscribeSocket();
+        const timer = setTimeout(async () => {
+            await this.connectSocket();
+            await this.subscribeSocket();
         }, 1002);
 
 
@@ -323,76 +324,76 @@ class RideChatScreen extends Component {
         console.log('subscribeSocketNewConversation:', id_request)
         try {
             if (this.props.conversation_id == 0) {
-                constants.socket.emit("subscribe", { channel: "request." + id_request })
-                    .on("newConversation", (channel, data) => {
-                        console.log('Evento socket newConversation disparado! ', channel, data)
-                        this.setState({
-                            conversation_id: data.conversation_id
-                        })
-                        //this.playSoundRequest();
-                        this.getConversation();
-                    })
+                if(WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
+                    WebSocketServer.socket.emit("subscribe", { channel: "request." + id_request })
+                        .on("newConversation", (channel, data) => {
+                            console.log('Evento socket newConversation disparado! ', channel, data)
+                            this.setState({
+                                conversation_id: data.conversation_id
+                            })
+                            //this.playSoundRequest();
+                            this.getConversation();
+                        });
+                }
             }
         } catch (error) {
             handlerException('connectSocket - RideChatScreen - subscribeSocketNewConversation()', error);
         }
     }
     
-    subscribeSocket() {
+    async subscribeSocket() {
         console.log('this.state.conversationId', this.state.conversation_id)
         try {
-            this.socket
-                .emit("subscribe", { channel: "conversation." + this.state.conversation_id })
-                .on("newMessage", (channel, data) => {
-
-                    let newMessage = {
-                        _id: data.message.id,
-                        createdAt: data.message.created_at,
-                        text: data.message.message,
-                        sent: true,
-                        received: false,
-                        user: { 
-                            _id: data.message.user_id
+            if(WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
+                WebSocketServer.socket
+                    .emit("subscribe", { channel: "conversation." + this.state.conversation_id })
+                    .on("newMessage", (channel, data) => {
+    
+                        let newMessage = {
+                            _id: data.message.id,
+                            createdAt: data.message.created_at,
+                            text: data.message.message,
+                            sent: true,
+                            received: false,
+                            user: { 
+                                _id: data.message.user_id
+                            }
                         }
-                    }
-                    
-                    const isAdminOrCorp = data.message.admin_id && data.message.admin_id !== this.state.userLedgeId;
-                    const isMessageAlert = data.message.user_id && this.state.userLedgeId && 
-                        parseInt(data.message.user_id) !== parseInt(this.state.userLedgeId);
-                    const isNewMessage = this.state.messages && 
-                        !this.state.messages.some((message) => message._id === newMessage._id) && 
-                        ( isMessageAlert || isAdminOrCorp);
-                    
-                    if (isMessageAlert) {
-                        //this.playSoundRequest();
-                    }
-
-                    this.setState(state => {
-                        if (isNewMessage) {
-                            return {
-                                messages: GiftedChat.append(state.messages, newMessage),
-                            };
+                        
+                        const isAdminOrCorp = data.message.admin_id && data.message.admin_id !== this.state.userLedgeId;
+                        const isMessageAlert = data.message.user_id && this.state.userLedgeId && 
+                            parseInt(data.message.user_id) !== parseInt(this.state.userLedgeId);
+                        const isNewMessage = this.state.messages && 
+                            !this.state.messages.some((message) => message._id === newMessage._id) && 
+                            ( isMessageAlert || isAdminOrCorp);
+    
+                        this.setState(state => {
+                            if (isNewMessage) {
+                                return {
+                                    messages: GiftedChat.append(state.messages, newMessage),
+                                };
+                            }
+                        });
+    
+                        this.setState({ lastIdMessage: data.message.id });
+                        if (data.message.is_seen == 0 && data.message.user_id !== this.props.ledger) {
+                            this.seeMessage();
                         }
                     });
-
-                    this.setState({ lastIdMessage: data.message.id });
-                    if (data.message.is_seen == 0 && data.message.user_id !== this.props.ledger) {
-                        this.seeMessage();
-                    }
-                })
+            }
         }  catch (error) {
             handlerException('connectSocket - RideChatScreen - subscribeSocket()', error);
         }
     }
 
     async unsubscribeSocket() {
-        if (this.socket != null) {
+        if (WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
             if (this.state.conversation_id) {
                 try {
-                    this.socket.removeAllListeners("newConversation")
-                    this.socket.removeAllListeners("newMessage")
-                    this.socket.removeAllListeners("readMessage")
-                    this.socket.emit("unsubscribe", {
+                    WebSocketServer.socket.removeAllListeners("newConversation")
+                    WebSocketServer.socket.removeAllListeners("newMessage")
+                    WebSocketServer.socket.removeAllListeners("readMessage")
+                    WebSocketServer.socket.emit("unsubscribe", {
                         channel: "conversation." + this.state.conversation_id
                     })
                 } catch (error) {
@@ -404,7 +405,9 @@ class RideChatScreen extends Component {
 
     async unsubscribeSocketNewConversation() {
         try {
-            this.socket.removeAllListeners("newConversation");
+            if(WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
+                WebSocketServer.socket.removeAllListeners("newConversation");
+            }
         }  catch (error) {
             handlerException('connectSocket - RideChatScreen - unsubscribeSocketNewConversation()', error);
         }

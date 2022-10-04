@@ -44,10 +44,10 @@ class RideButton extends Component {
 
     async connectSocket() {
         try {
+            if(WebSocketServer.socket !== undefined && WebSocketServer.socket != null)
+                return;
             if (!WebSocketServer.isConnected) {
-                this.socket = WebSocketServer.connect(this.props.socket_url);
-            } else {
-                this.socket = WebSocketServer.socket;
+                WebSocketServer.socket = WebSocketServer.connect(this.props.socket_url);
             }
         } catch (error) {
             handlerException('connectSocket - RideButton - connectSocket(): ', error);
@@ -73,7 +73,8 @@ class RideButton extends Component {
             })
         }
 
-        const timer = setTimeout(() => {
+        const timer = setTimeout(async () => {
+            await this.connectSocket();
             this.subscribeSocketConversation(this.props.request_id);
         }, 1002);
         return () => clearTimeout(timer);
@@ -83,15 +84,17 @@ class RideButton extends Component {
     subscribeSocketConversation(id) {
 		console.log('subscribeSocketConversation', id)
         try {
-            this.socket
-                .emit("subscribe", { channel: "conversation." + id })
-                .on("newMessage", (channel, data) => {
-    
-                    //this.playSoundRequest();
-                    this.setState({
-                        contNewMensag: this.state.contNewMensag + 1
-                    });
-                })
+            if(WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
+                WebSocketServer.socket
+                    .emit("subscribe", { channel: "conversation." + id })
+                    .on("newMessage", (channel, data) => {
+        
+                        //this.playSoundRequest();
+                        this.setState({
+                            contNewMensag: this.state.contNewMensag + 1
+                        });
+                    })
+            }
         } catch (error) {
             handlerException('connectSocket - RideButton - subscribeSocketConversation():', error);
 		}
@@ -100,15 +103,17 @@ class RideButton extends Component {
     subscribeSocketNewConversation(id_request) {
 		console.log('subscribeSocketNewConversation')
 		try {
-			this.socket.emit("subscribe", { channel: "request." + id_request })
-				.on("newConversation", (channel, data) => {
-                    this.setState({
-                        conversation_id: data.conversation_id,
-                        contNewMensag: 1
-                    });
-					//this.playSoundRequest()
-					console.log('Evento socket newConversation disparado! ', channel, data)
-				})
+            if(WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
+                WebSocketServer.socket.emit("subscribe", { channel: "request." + id_request })
+                    .on("newConversation", (channel, data) => {
+                        this.setState({
+                            conversation_id: data.conversation_id,
+                            contNewMensag: 1
+                        });
+                        //this.playSoundRequest()
+                        console.log('Evento socket newConversation disparado! ', channel, data)
+                    })
+            }
 		} catch (error) {
             handlerException('connectSocket - RideButton - subscribeSocketNewConversation():', error);
 		}
@@ -116,21 +121,23 @@ class RideButton extends Component {
 
     async unsubscribeSocketNewConversation() {
         try {
-            this.socket.removeAllListeners("newConversation");
+            if(WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
+                WebSocketServer.socket.removeAllListeners("newConversation");
+            }
         } catch (error) {
             handlerException('connectSocket - RideButton - unsubscribeSocketNewConversation():', error);
         }
     }
 
     async unsubscribeSocket() {
-        if (this.socket != null) {
+        if (WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
             if (this.state.conversation_id) {
                 try {
-                    this.socket.removeAllListeners("newConversation")
-                    this.socket.removeAllListeners("newMessage")
-                    this.socket.removeAllListeners("readMessage")
-                    this.socket.removeAllListeners("newConversation")
-                    this.socket.emit("unsubscribe", {
+                    WebSocketServer.socket.removeAllListeners("newConversation")
+                    WebSocketServer.socket.removeAllListeners("newMessage")
+                    WebSocketServer.socket.removeAllListeners("readMessage")
+                    WebSocketServer.socket.removeAllListeners("newConversation")
+                    WebSocketServer.socket.emit("unsubscribe", {
                         channel: "conversation." + this.state.conversation_id
                     })
                 } catch (error) {
