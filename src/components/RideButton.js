@@ -11,7 +11,7 @@ import { getConversation } from '../services/api';
 import WebSocketServer from "../services/socket";
 import Sound from "react-native-sound";
 import Badger from './Badger';
-import { handlerException } from '../../../../App/Services/Exception';
+import { handleException } from '@codificar/use-log-errors'; 
 
 const icon = require('react-native-chat/src/img/chat.png');
 
@@ -25,7 +25,7 @@ class RideButton extends Component {
             contNewMensag: 0,
             audio: this.props.audio,
             playSound: null,
-            playSoundError: true,
+            playSoundError: true
         }
 
         this.connectSocket();
@@ -50,7 +50,13 @@ class RideButton extends Component {
                 WebSocketServer.socket = WebSocketServer.connect(this.props.socket_url);
             }
         } catch (error) {
-            handlerException('connectSocket - RideButton - connectSocket(): ', error);
+            handleException({
+                baseUrl: this.props.baseUrl,
+                projectName: this.props.projectName,
+                appType: this.props.appType,
+                errorInfo: 'connectSocket - RideButton - connectSocket(): ',
+                error,
+            });
         }
     }
 
@@ -96,7 +102,13 @@ class RideButton extends Component {
                     })
             }
         } catch (error) {
-            handlerException('connectSocket - RideButton - subscribeSocketConversation():', error);
+            handleException({
+                baseUrl: this.props.baseUrl,
+                projectName: this.props.projectName,
+                appType: this.props.appType,
+                errorInfo: 'connectSocket - RideButton - subscribeSocketConversation():',
+                error,
+            });
 		}
 	}
 
@@ -115,7 +127,13 @@ class RideButton extends Component {
                     })
             }
 		} catch (error) {
-            handlerException('connectSocket - RideButton - subscribeSocketNewConversation():', error);
+            handleException({
+                baseUrl: this.props.baseUrl,
+                projectName: this.props.projectName,
+                appType: this.props.appType,
+                errorInfo: 'connectSocket - RideButton - subscribeSocketNewConversation():',
+                error,
+            });
 		}
     }
 
@@ -125,7 +143,13 @@ class RideButton extends Component {
                 WebSocketServer.socket.removeAllListeners("newConversation");
             }
         } catch (error) {
-            handlerException('connectSocket - RideButton - unsubscribeSocketNewConversation():', error);
+            handleException({
+                baseUrl: this.props.baseUrl,
+                projectName: this.props.projectName,
+                appType: this.props.appType,
+                errorInfo: 'connectSocket - RideButton - unsubscribeSocketNewConversation():',
+                error,
+            });
         }
     }
 
@@ -141,7 +165,13 @@ class RideButton extends Component {
                         channel: "conversation." + this.state.conversation_id
                     })
                 } catch (error) {
-                    handlerException('connectSocket - RideButton - unsubscribeSocket():', error);
+                    handleException({
+                        baseUrl: this.props.baseUrl,
+                        projectName: this.props.projectName,
+                        appType: this.props.appType,
+                        errorInfo: 'connectSocket - RideButton - unsubscribeSocket():',
+                        error,
+                    });
                 }
 
             }
@@ -161,7 +191,13 @@ class RideButton extends Component {
                 this.state.playSound.play();
             }    
         } catch (error) {
-            handlerException('playSound - RideButton - playSoundRequest():', error);
+            handleException({
+                baseUrl: this.props.baseUrl,
+                projectName: this.props.projectName,
+                appType: this.props.appType,
+                errorInfo: 'playSound - RideButton - playSoundRequest():',
+                error,
+            });
         }
 
     }
@@ -221,7 +257,10 @@ class RideButton extends Component {
             token: this.props.token,
             requestId: this.props.request_id,
             color: this.props.color,
-            audio: this.state.audio
+            audio: this.props.audio,
+            baseUrl: this.props.baseUrl,
+            projectName: this.props.projectName,
+            appType: this.props.appType,
         })
     }
 

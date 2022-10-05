@@ -23,7 +23,7 @@ import { getConversation, getMessageChat, seeMessage, sendMessage } from '../ser
 import { withNavigation } from 'react-navigation';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
-import { handlerException } from '../../../../App/Services/Exception';
+import { handleException } from '@codificar/use-log-errors'; 
 
 const send = require('react-native-chat/src/img/send.png');
 var color = '#FBFBFB';
@@ -56,6 +56,9 @@ class RideChatScreen extends Component {
             contNewMensag: 0,
             is_refreshing: false,
             intervalConversation: null,
+            baseUrl: paramRoute.basUrl || '',
+            projectName: paramRoute.projectName || '',
+            appType: paramRoute.appType || '',
         }
 
         color = paramRoute.color;
@@ -84,7 +87,13 @@ class RideChatScreen extends Component {
                 WebSocketServer.socket = WebSocketServer.connect(this.props.socket_url);
             }
         } catch (error) {
-            handlerException('connectSocket - RideChatScreen - connectSocket(): ', error);
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'connectSocket - RideChatScreen - connectSocket(): ',
+                error,
+            });
         }
     }
 
@@ -141,7 +150,13 @@ class RideChatScreen extends Component {
                 });
             }
         } catch (error) {
-            handlerException('confiSound - RideChatScreen - setSound(): ', error);
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'configSound - RideChatScreen - setSound(): ',
+                error,
+            });
         }
     }
 
@@ -176,7 +191,13 @@ class RideChatScreen extends Component {
                 this.clearIntervalConverstaion();
             }
         } catch (error) {
-            handlerException('Chatlib - RideChatScreen - callApiConversation:', error);
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'Chatlib - RideChatScreen - callApiConversation:',
+                error,
+            });
         }
     }
 
@@ -293,7 +314,13 @@ class RideChatScreen extends Component {
                 this.state.playSound.play();
             }    
         } catch (error) {
-            handlerException('playSound - RideButton - playSoundRequest:', error);
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'playSound - RideButton - playSoundRequest:',
+                error,
+            });
         }
 
     }
@@ -337,7 +364,13 @@ class RideChatScreen extends Component {
                 }
             }
         } catch (error) {
-            handlerException('connectSocket - RideChatScreen - subscribeSocketNewConversation()', error);
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'connectSocket - RideChatScreen - subscribeSocketNewConversation()',
+                error,
+            });
         }
     }
     
@@ -382,7 +415,13 @@ class RideChatScreen extends Component {
                     });
             }
         }  catch (error) {
-            handlerException('connectSocket - RideChatScreen - subscribeSocket()', error);
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'connectSocket - RideChatScreen - subscribeSocket()',
+                error,
+            });
         }
     }
 
@@ -397,7 +436,13 @@ class RideChatScreen extends Component {
                         channel: "conversation." + this.state.conversation_id
                     })
                 } catch (error) {
-                    handlerException('connectSocket - RideChatScreen - unsubscribeSocket()', error);
+                    handleException({
+                        baseUrl: this.state.baseUrl,
+                        projectName: this.state.projectName,
+                        appType: this.state.appType,
+                        errorInfo: 'connectSocket - RideChatScreen - unsubscribeSocket()',
+                        error,
+                    });
                 }
             }
         }
@@ -409,7 +454,13 @@ class RideChatScreen extends Component {
                 WebSocketServer.socket.removeAllListeners("newConversation");
             }
         }  catch (error) {
-            handlerException('connectSocket - RideChatScreen - unsubscribeSocketNewConversation()', error);
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'connectSocket - RideChatScreen - unsubscribeSocketNewConversation()',
+                error,
+            });
         }
     }
 
