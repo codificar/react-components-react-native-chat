@@ -69,6 +69,7 @@ export function sendMessage(
     request_id,
     message,
     receiver_id,
+    is_customer_chat = 0,
     type = 'text'
 ) {
     return axios.post(`${url}/api/libs/chat/send`, {
@@ -77,6 +78,7 @@ export function sendMessage(
         request_id: request_id,
         message: message,
         receiver_id: receiver_id,
+        is_customer_chat: is_customer_chat,
         type: type
     });
 }

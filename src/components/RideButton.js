@@ -150,6 +150,7 @@ class RideButton extends Component {
             socket_url: this.props.socket_url,
             id: this.props.id,
             token: this.props.token,
+            is_customer_chat: this.props.is_customer_chat,
             requestId: this.props.request_id,
             color: this.props.color
         })

@@ -47,6 +47,7 @@ class RideChatScreen extends Component {
             id: paramRoute.id,
             token: paramRoute.token,
             conversation_id: paramRoute.conversation_id,
+            is_customer_chat: paramRoute.is_customer_chat,
             color: paramRoute.color,
             contNewMensag: 0,
             is_refreshing: false
@@ -272,6 +273,7 @@ class RideChatScreen extends Component {
                 this.state.requestId,
                 formatted,
                 this.state.receiveID,
+                this.state.is_customer_chat,
                 type
             )
 
