@@ -52,10 +52,11 @@ class HelpChatScreen extends Component {
 
     connectSocket() {
         try {
+
+            if(WebSocketServer.socket !== undefined && WebSocketServer.socket != null)
+                return;
             if (!WebSocketServer.isConnected) {
-                this.socket = WebSocketServer.connect(this.props.socket_url);
-            } else {
-                this.socket = WebSocketServer.socket;
+                WebSocketServer.socket = WebSocketServer.connect(this.props.socket_url);
             }
         } catch (error) {
             handlerException('connectSocket - HelpChatScreen', error);
@@ -118,17 +119,19 @@ class HelpChatScreen extends Component {
 
 
     async unsubscribeSocketNewConversation() {
-        await this.socket.removeAllListeners("newConversation");
+        if (WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
+            await WebSocketServer.socket.removeAllListeners("newConversation");
+        }
     }
 
     async unsubscribeSocket() {
-        if (this.socket != null) {
+        if (WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
             if (this.state.conversation) {
                 console.log('qweqwe', "conversation." + this.state.conversation);
-                await this.socket.removeAllListeners("newConversation")
-                await this.socket.removeAllListeners("newMessage")
-                await this.socket.removeAllListeners("readMessage")
-                await this.socket.emit("unsubscribe", {
+                await WebSocketServer.socket.removeAllListeners("newConversation")
+                await WebSocketServer.socket.removeAllListeners("newMessage")
+                await WebSocketServer.socket.removeAllListeners("readMessage")
+                await WebSocketServer.socket.emit("unsubscribe", {
                     channel: "conversation." + this.state.conversation
                 })
             }
@@ -255,12 +258,12 @@ class HelpChatScreen extends Component {
      */
     subscribeSocket() {
 
-        if (this.socket !== null && this.state.conversation !== null) {
+        if (WebSocketServer.socket != undefined && WebSocketServer.socket !== null && this.state.conversation !== null) {
             console.log(
                 `Tentando se conectar no canal conversation.${this.state.conversation}`,
             );
 
-            this.socket
+            WebSocketServer.socket
             .emit('subscribe', {
                 channel: `conversation.${this.state.conversation}`,
             })
