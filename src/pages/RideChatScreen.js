@@ -18,7 +18,7 @@ import {
     Day 
 } from 'react-native-gifted-chat';
 import { getMessageChat, seeMessage, sendMessage } from '../services/api';
-import { withNavigation } from 'react-navigation';
+import { withNavigation } from '@react-navigation/compat';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
 
