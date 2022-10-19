@@ -33,12 +33,12 @@ class DirectChatScreen extends Component {
 
         this.socket = WebSocketServer.connect(paramRoute.socket_url);
 
-        this.willBlur = this.props.navigation.addListener("willBlur", () => {
+        this.willBlur = this.props.navigation.addListener("blur", () => {
             
             this.unsubscribeSocket();
         })
 
-        this.willFocus = this.props.navigation.addListener("willFocus", async () => {
+        this.willFocus = this.props.navigation.addListener("focus", async () => {
 
             await this.getMessages();
             this.subscribeSocket();

@@ -32,7 +32,7 @@ class HelpChatScreen extends Component {
 
         this.socket = WebSocketServer.connect(paramRoute.socket_url);
 
-        this.willBlur = this.props.navigation.addListener("willBlur", () => {
+        this.willBlur = this.props.navigation.addListener("blur", () => {
             
             this.unsubscribeSocket();
         })
