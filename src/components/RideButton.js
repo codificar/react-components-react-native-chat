@@ -10,8 +10,24 @@ import { withNavigation } from '@react-navigation/compat';
 import { getConversation } from '../services/api';
 import WebSocketServer from "../services/socket";
 import Badger from './Badger';
+import { FloatingAction } from "react-native-floating-action";
 
 const icon = require('react-native-chat/src/img/chat.png');
+
+const actions = [
+    {
+      text: "Chat com usuário",
+      icon: icon,
+      name: "bt_customer",
+      position: 2
+    },
+    {
+      text: "Chat com estabelecimento",
+      icon: icon,
+      name: "bt_institution",
+      position: 1
+    },
+];
 
 class RideButton extends Component {
     constructor(props) {
@@ -133,8 +149,16 @@ class RideButton extends Component {
             }
         }
     }
+
+    handleChat(name = 'bt_institution') {
+        if (name == 'bt_institution') {
+            this.navigateTo(0);
+        } else {
+            this.navigateTo(1);
+        }
+    }
     
-    async navigateTo() {
+    async navigateTo(is_customer_chat = 0) {
         let conversationId = this.state.conversation_id;
 
         if (conversationId == 0) {
@@ -152,7 +176,7 @@ class RideButton extends Component {
                 socket_url: this.props.socket_url,
                 id: this.props.id,
                 token: this.props.token,
-                is_customer_chat: this.props.is_customer_chat,
+                is_customer_chat: is_customer_chat,
                 requestId: this.props.request_id,
                 color: this.props.color
         }})
@@ -161,9 +185,18 @@ class RideButton extends Component {
     render() {
         return (
             <View>
-                <TouchableOpacity
+                { this.props.impersonate && (
+                    <FloatingAction
+                        actions={actions}
+                        onPressItem={name => {
+                            this.handleChat(name);
+                        }}
+                    />
+                )}
+                { !this.props.impersonate &&
+                (<TouchableOpacity
                     style={styles.iconCallUser}
-                    onPress={() => this.navigateTo()}
+                    onPress={() => this.navigateTo(this.props.is_customer_chat)}
                     activeOpacity={0.6}
                 >
                     <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
@@ -179,7 +212,7 @@ class RideButton extends Component {
                             source={icon}
                         />
                     </View>
-                </TouchableOpacity>
+                </TouchableOpacity>)}
             </View>
         );
     }
