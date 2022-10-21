@@ -6,7 +6,9 @@ import {
     Vibration,
     StyleSheet,
     Image,
-    RefreshControl
+    RefreshControl,
+    Text,
+    SafeAreaView
 } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { 
@@ -21,6 +23,7 @@ import { getMessageChat, seeMessage, sendMessage } from '../services/api';
 import { withNavigation } from '@react-navigation/compat';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 
 const send = require('react-native-chat/src/img/send.png');
 var color = '#FBFBFB';
@@ -45,6 +48,8 @@ class RideChatScreen extends Component {
             sound: "",
             url: paramRoute.url,
             id: paramRoute.id,
+            userName: paramRoute.userName,
+            userAvatar: paramRoute.userAvatar,
             token: paramRoute.token,
             conversation_id: paramRoute.conversation_id,
             is_customer_chat: paramRoute.is_customer_chat,
@@ -396,9 +401,24 @@ class RideChatScreen extends Component {
     render() {
 
         return (
-            <View style={styles.container}>
-                <View style={{ marginLeft: 25 }}>
-                    <Toolbar onPress={() => this.props.navigation.goBack()} />
+            <SafeAreaView style={styles.container}>
+                <View style={styles.headerView}>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      style={styles.backButton}
+                      onPress={() => this.props.navigation.goBack()}
+                    >
+                      <MaterialIcons name="keyboard-arrow-left" color={this.state.color} size={35} />
+                    </TouchableOpacity>
+                    { !this.state.is_customer_chat && (
+                        <Image
+                            style={styles.avatarImg}
+                            source={{ uri: this.state.userAvatar }}
+                        />
+                    )}
+                    <Text style={styles.userName}>
+                        {this.state.is_customer_chat ? 'Chat com usuário' : this.state.userName}
+                    </Text>
                 </View>
                 <GiftedChat
                     messages={this.state.messages}
@@ -417,7 +437,7 @@ class RideChatScreen extends Component {
                         refreshControl: this.renderRefreshControl()
                     }}
                 />
-            </View>
+            </SafeAreaView>
         )
     }
 }
@@ -455,6 +475,31 @@ const styles = StyleSheet.create({
         height: 30,
         justifyContent: "center",
         alignItems: "center"
+    },
+    avatarImg: {
+        width: 40,
+        aspectRatio: 1,
+        borderRadius: 20,
+        marginRight: 10,
+        borderWidth: 1,
+        borderColor: 'lightgray'
+    },
+    backButton: {
+        marginRight: 10,
+        justifyContent: 'center'
+    },
+    headerView: {
+        width: '100%',
+        flexDirection: 'row',
+        paddingTop: 10,
+        paddingBottom: 10,
+        alignItems: 'center',
+        backgroundColor: 'white'
+    },
+    userName: {
+        fontSize: 18,
+        color: 'black',
+        fontWeight: 'bold'
     },
     send: {
         width: 25,

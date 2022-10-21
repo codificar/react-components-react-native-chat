@@ -14,21 +14,6 @@ import { FloatingAction } from "react-native-floating-action";
 
 const icon = require('react-native-chat/src/img/chat.png');
 
-const actions = [
-    {
-      text: "Chat com usuário",
-      icon: icon,
-      name: "bt_customer",
-      position: 2
-    },
-    {
-      text: "Chat com estabelecimento",
-      icon: icon,
-      name: "bt_institution",
-      position: 1
-    },
-];
-
 class RideButton extends Component {
     constructor(props) {
         super(props);
@@ -36,6 +21,8 @@ class RideButton extends Component {
         this.state = {
             receiveID: 0,
             conversation_id: 0,
+            userName: '',
+            userAvatar: '',
             contNewMensag: 0
         }
 
@@ -121,6 +108,8 @@ class RideButton extends Component {
 			this.setState({
                 receiveID: data.user.id,
                 conversation_id: data.id,
+                userName: data.user.name,
+                userAvatar: data.user.image,
                 contNewMensag: data.new_messages
 			})
 
@@ -129,13 +118,14 @@ class RideButton extends Component {
 		}
     }
 
-    async callApiConversation() {
+    async callApiConversation(is_customer_chat = 0) {
         try {
             const response = await getConversation(
                 this.props.url,
                 this.props.id,
                 this.props.token,
-                this.props.request_id
+                this.props.request_id,
+                is_customer_chat
             );
 
             const { data } = response;
@@ -160,10 +150,14 @@ class RideButton extends Component {
     
     async navigateTo(is_customer_chat = 0) {
         let conversationId = this.state.conversation_id;
+        let userName = this.state.userName;
+        let userAvatar = this.state.userAvatar;
 
         if (conversationId == 0) {
-            const data = await this.callApiConversation();
+            const data = await this.callApiConversation(is_customer_chat);
             conversationId = data.id;
+            userName = data.user.name;
+            userAvatar = data.user.image;
             console.log('conversationId', conversationId);
         }
 
@@ -178,7 +172,9 @@ class RideButton extends Component {
                 token: this.props.token,
                 is_customer_chat: is_customer_chat,
                 requestId: this.props.request_id,
-                color: this.props.color
+                color: this.props.color,
+                userName: userName,
+                userAvatar: userAvatar
         }})
     }
 
@@ -187,7 +183,11 @@ class RideButton extends Component {
             <View>
                 { this.props.impersonate && (
                     <FloatingAction
-                        actions={actions}
+                        color="white"
+                        position="left"
+                        floatingIcon={icon}
+                        distanceToEdge={this.props.distanceToEdge}
+                        actions={this.props.actions}
                         onPressItem={name => {
                             this.handleChat(name);
                         }}

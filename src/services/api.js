@@ -7,12 +7,13 @@ import axios from 'axios';
  * @param {string} token 
  * @param {number} request_id 
  */
-export function getConversation(url, id, token, request_id) {
+export function getConversation(url, id, token, request_id, is_customer_chat = 0) {
     return axios.get(`${url}/api/libs/chat/conversation`, {
         params: {
             id: id,
             token: token,
-            request_id: request_id
+            request_id: request_id,
+            is_customer_chat: is_customer_chat
         }
     })
 }
