@@ -4,7 +4,8 @@ import {
     TouchableOpacity,
     StyleSheet,
     Vibration,
-    Image
+    Image,
+    Text
 } from 'react-native';
 import { withNavigation } from '@react-navigation/compat';
 import { getConversation } from '../services/api';
@@ -23,7 +24,10 @@ class RideButton extends Component {
             conversation_id: 0,
             userName: '',
             userAvatar: '',
-            contNewMensag: 0
+            contNewMensag: 0,
+            is_customer_chat: this.props.is_customer_chat ? this.props.is_customer_chat : 0,
+            text: this.props.text ? this.props.text : '',
+            buttonStyle: this.props.buttonStyle ? this.props.buttonStyle : styles.iconCallUser
         }
 
         this.socket = WebSocketServer.connect(this.props.socket_url);
@@ -174,7 +178,8 @@ class RideButton extends Component {
                 requestId: this.props.request_id,
                 color: this.props.color,
                 userName: userName,
-                userAvatar: userAvatar
+                userAvatar: userAvatar,
+                impersonate: this.props.impersonate
         }})
     }
 
@@ -195,10 +200,13 @@ class RideButton extends Component {
                 )}
                 { !this.props.impersonate &&
                 (<TouchableOpacity
-                    style={styles.iconCallUser}
-                    onPress={() => this.navigateTo(this.props.is_customer_chat)}
+                    style={this.state.buttonStyle}
+                    onPress={() => this.navigateTo(this.state.is_customer_chat)}
                     activeOpacity={0.6}
                 >
+                    { this.state.text.length > 0 && (
+                        <Text style={styles.title}>{this.state.text}</Text>
+                    )}
                     <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
                         <Badger contador={this.state.contNewMensag}
                             position={{
@@ -240,6 +248,10 @@ const styles = StyleSheet.create({
     img: {
         height: 22,
         width: 22
+    },
+    title: {
+        textAlign: 'center',
+        marginRight: 10
     }
 });
 

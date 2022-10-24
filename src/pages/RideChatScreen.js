@@ -50,6 +50,7 @@ class RideChatScreen extends Component {
             id: paramRoute.id,
             userName: paramRoute.userName,
             userAvatar: paramRoute.userAvatar,
+            impersonate: paramRoute.impersonate,
             token: paramRoute.token,
             conversation_id: paramRoute.conversation_id,
             is_customer_chat: paramRoute.is_customer_chat,
@@ -410,14 +411,14 @@ class RideChatScreen extends Component {
                     >
                       <MaterialIcons name="keyboard-arrow-left" color={this.state.color} size={35} />
                     </TouchableOpacity>
-                    { !this.state.is_customer_chat && (
+                    { !(this.state.impersonate && this.state.is_customer_chat) && (
                         <Image
                             style={styles.avatarImg}
                             source={{ uri: this.state.userAvatar }}
                         />
                     )}
                     <Text style={styles.userName}>
-                        {this.state.is_customer_chat ? 'Chat com usuário' : this.state.userName}
+                        {(this.state.impersonate && this.state.is_customer_chat) ? 'Chat com usuário' : this.state.userName}
                     </Text>
                 </View>
                 <GiftedChat
