@@ -8,7 +8,7 @@ import {
 import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { getMessageDirectChat, sendMessageDirectChat, responseQuickReply } from '../services/api';
-import { withNavigation } from 'react-navigation';
+import { withNavigation } from '@react-navigation/compat';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
 import QuickReplies from 'react-native-gifted-chat/lib/QuickReplies';
@@ -33,12 +33,12 @@ class DirectChatScreen extends Component {
 
         this.socket = WebSocketServer.connect(paramRoute.socket_url);
 
-        this.willBlur = this.props.navigation.addListener("willBlur", () => {
+        this.willBlur = this.props.navigation.addListener("blur", () => {
             
             this.unsubscribeSocket();
         })
 
-        this.willFocus = this.props.navigation.addListener("willFocus", async () => {
+        this.willFocus = this.props.navigation.addListener("focus", async () => {
 
             await this.getMessages();
             this.subscribeSocket();

@@ -8,7 +8,7 @@ import {
 import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { getMessageHelpChat, sendMessageHelpChat } from '../services/api';
-import { withNavigation } from 'react-navigation';
+import { withNavigation } from '@react-navigation/compat';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
 
@@ -32,7 +32,7 @@ class HelpChatScreen extends Component {
 
         this.socket = WebSocketServer.connect(paramRoute.socket_url);
 
-        this.willBlur = this.props.navigation.addListener("willBlur", () => {
+        this.willBlur = this.props.navigation.addListener("blur", () => {
             
             this.unsubscribeSocket();
         })
