@@ -4,12 +4,14 @@ import {
     TouchableOpacity,
     StyleSheet,
     Vibration,
-    Image
+    Image,
+    Text
 } from 'react-native';
-import { withNavigation } from 'react-navigation';
+import { withNavigation } from '@react-navigation/compat';
 import { getConversation } from '../services/api';
 import WebSocketServer from "../services/socket";
 import Badger from './Badger';
+import { FloatingAction } from "react-native-floating-action";
 
 const icon = require('react-native-chat/src/img/chat.png');
 
@@ -20,17 +22,22 @@ class RideButton extends Component {
         this.state = {
             receiveID: 0,
             conversation_id: 0,
-            contNewMensag: 0
+            userName: '',
+            userAvatar: '',
+            contNewMensag: 0,
+            is_customer_chat: this.props.is_customer_chat ? this.props.is_customer_chat : 0,
+            text: this.props.text ? this.props.text : '',
+            buttonStyle: this.props.buttonStyle ? this.props.buttonStyle : styles.iconCallUser
         }
 
         this.socket = WebSocketServer.connect(this.props.socket_url);
 
-        this.willFocus = this.props.navigation.addListener("willFocus", async () => {
+        this.willFocus = this.props.navigation.addListener("focus", async () => {
             await this.getConversation();
             this.subscribeSocketNewConversation(this.props.request_id);
         });
 
-        this.willBlur = this.props.navigation.addListener("willBlur", () => {
+        this.willBlur = this.props.navigation.addListener("blur", () => {
 			this.unsubscribeSocket();
 			this.unsubscribeSocketNewConversation();
 		});
@@ -105,6 +112,8 @@ class RideButton extends Component {
 			this.setState({
                 receiveID: data.user.id,
                 conversation_id: data.id,
+                userName: data.user.name,
+                userAvatar: data.user.image,
                 contNewMensag: data.new_messages
 			})
 
@@ -113,13 +122,14 @@ class RideButton extends Component {
 		}
     }
 
-    async callApiConversation() {
+    async callApiConversation(is_customer_chat = 0) {
         try {
             const response = await getConversation(
                 this.props.url,
                 this.props.id,
                 this.props.token,
-                this.props.request_id
+                this.props.request_id,
+                is_customer_chat
             );
 
             const { data } = response;
@@ -133,36 +143,70 @@ class RideButton extends Component {
             }
         }
     }
+
+    handleChat(name = 'bt_institution') {
+        if (name == 'bt_institution') {
+            this.navigateTo(0);
+        } else {
+            this.navigateTo(1);
+        }
+    }
     
-    async navigateTo() {
+    async navigateTo(is_customer_chat = 0) {
         let conversationId = this.state.conversation_id;
+        let userName = this.state.userName;
+        let userAvatar = this.state.userAvatar;
 
         if (conversationId == 0) {
-            const data = await this.callApiConversation();
+            const data = await this.callApiConversation(is_customer_chat);
             conversationId = data.id;
+            userName = data.user.name;
+            userAvatar = data.user.image;
             console.log('conversationId', conversationId);
         }
 
-        this.props.navigation.navigate('RideChatScreen', {
-            receiveID: this.state.receiveID,
-            conversation_id: conversationId,
-            url: this.props.url,
-            socket_url: this.props.socket_url,
-            id: this.props.id,
-            token: this.props.token,
-            requestId: this.props.request_id,
-            color: this.props.color
-        })
+        this.props.navigation.navigate('ChatStack', {
+            screen: 'RideChatScreen', 
+            params: {
+                receiveID: this.state.receiveID,
+                conversation_id: conversationId,
+                url: this.props.url,
+                socket_url: this.props.socket_url,
+                id: this.props.id,
+                token: this.props.token,
+                is_customer_chat: is_customer_chat,
+                requestId: this.props.request_id,
+                color: this.props.color,
+                userName: userName,
+                userAvatar: userAvatar,
+                impersonate: this.props.impersonate
+        }})
     }
 
     render() {
         return (
             <View>
-                <TouchableOpacity
-                    style={styles.iconCallUser}
-                    onPress={() => this.navigateTo()}
+                { this.props.impersonate && (
+                    <FloatingAction
+                        color="white"
+                        position="left"
+                        floatingIcon={icon}
+                        distanceToEdge={this.props.distanceToEdge}
+                        actions={this.props.actions}
+                        onPressItem={name => {
+                            this.handleChat(name);
+                        }}
+                    />
+                )}
+                { !this.props.impersonate &&
+                (<TouchableOpacity
+                    style={this.state.buttonStyle}
+                    onPress={() => this.navigateTo(this.state.is_customer_chat)}
                     activeOpacity={0.6}
                 >
+                    { this.state.text.length > 0 && (
+                        <Text style={styles.title}>{this.state.text}</Text>
+                    )}
                     <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
                         <Badger contador={this.state.contNewMensag}
                             position={{
@@ -176,7 +220,7 @@ class RideButton extends Component {
                             source={icon}
                         />
                     </View>
-                </TouchableOpacity>
+                </TouchableOpacity>)}
             </View>
         );
     }
@@ -204,6 +248,10 @@ const styles = StyleSheet.create({
     img: {
         height: 22,
         width: 22
+    },
+    title: {
+        textAlign: 'center',
+        marginRight: 10
     }
 });
 

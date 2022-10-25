@@ -6,7 +6,7 @@ import {
     StyleSheet,
     Image
 } from 'react-native';
-import { withNavigation } from 'react-navigation';
+import { withNavigation } from '@react-navigation/compat';
 
 const icon = require('react-native-chat/src/img/chat.png');
 
@@ -28,13 +28,15 @@ class HelpButton extends Component {
             <View>
                 <TouchableOpacity
                     style={styles.chatBtn}
-                    onPress={() => this.props.navigation.navigate('HelpChatScreen', {
-                        url: this.props.url,
-                        socket_url: this.props.socket_url,
-                        id: this.props.id,
-                        token: this.props.token,
-                        request_id: this.props.request_id
-                    })}
+                    onPress={() => this.props.navigation.navigate('ChatStack', {
+                        screen: 'HelpChatScreen',
+                        params: {
+                            url: this.props.url,
+                            socket_url: this.props.socket_url,
+                            id: this.props.id,
+                            token: this.props.token,
+                            request_id: this.props.request_id
+                    }})}
                 >
                     <Image 
                         style={styles.img}
