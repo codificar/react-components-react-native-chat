@@ -185,21 +185,19 @@ class RideButton extends Component {
 
     render() {
         return (
-            <View>
-                { this.props.impersonate && (
-                    <FloatingAction
-                        color="white"
-                        position="left"
-                        floatingIcon={icon}
-                        distanceToEdge={this.props.distanceToEdge}
-                        actions={this.props.actions}
-                        onPressItem={name => {
-                            this.handleChat(name);
-                        }}
-                    />
-                )}
-                { !this.props.impersonate &&
-                (<TouchableOpacity
+            this.props.impersonate ? (
+                <FloatingAction
+                    color="white"
+                    position="left"
+                    floatingIcon={icon}
+                    distanceToEdge={this.props.distanceToEdge}
+                    actions={this.props.actions}
+                    onPressItem={name => {
+                        this.handleChat(name);
+                    }}
+                />
+            ) : (
+                <TouchableOpacity
                     style={this.state.buttonStyle}
                     onPress={() => this.navigateTo(this.state.is_customer_chat)}
                     activeOpacity={0.6}
@@ -220,8 +218,8 @@ class RideButton extends Component {
                             source={icon}
                         />
                     </View>
-                </TouchableOpacity>)}
-            </View>
+                </TouchableOpacity>
+            )
         );
     }
 }
