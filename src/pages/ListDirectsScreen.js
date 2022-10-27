@@ -20,7 +20,7 @@ const box_img = require('react-native-chat/src/img/box.png');
 class ListDirectsScreen extends Component {
     constructor(props) {
         super(props);
-        var paramRoute = this.props.navigation != undefined ? this.props.navigation.state.params : this.props.route.params;
+        var paramRoute = this.props.navigation.state != undefined ? this.props.navigation.state.params : this.props.route.params;
 
         if (paramRoute === undefined)
             paramRoute = this.props.route.params;
