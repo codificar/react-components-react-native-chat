@@ -52,7 +52,6 @@ class ListDirectsScreen extends Component {
 
     componentWillUnmount() {
 		this.backHandler.remove();
-		//this.willFocus.remove();
 	}
 
     async listDirectConversations() {

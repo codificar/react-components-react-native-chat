@@ -50,7 +50,6 @@ class HelpChatScreen extends Component {
 
     componentWillUnmount() {
 		this.backHandler.remove();
-		this.willBlur.remove();
 	}
 
 

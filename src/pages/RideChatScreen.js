@@ -91,8 +91,6 @@ class RideChatScreen extends Component {
     componentWillUnmount() {
         try {
           this.backHandler.remove();
-          this.willBlur.remove();
-          this.willFocus.remove();
         } catch (error) {
           console.log('this.componentWillUnmount Error:', error);
         }
