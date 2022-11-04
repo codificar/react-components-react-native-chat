@@ -9,7 +9,7 @@ import { View, StyleSheet, BackHandler, Image, RefreshControl, Vibration } from 
 import Toolbar from '../components/ToolBar';
 import Sound from "react-native-sound";
 import { getMessageHelpChat, sendMessageHelpChat } from '../services/api';
-import { withNavigation } from 'react-navigation';
+import { withNavigation } from '@react-navigation/compat';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
 import { handlerException } from '../../../../App/Services/Exception';
@@ -37,12 +37,12 @@ class HelpChatScreen extends Component {
 
         this.connectSocket();
 
-        this.willBlur = this.props.navigation.addListener("willBlur", async () => {
+        this.willBlur = this.props.navigation.addListener("blur", async () => {
             await this.unsubscribeSocket();
             await this.unsubscribeSocketNewConversation();
         });
 
-        this.willFocus = this.props.navigation.addListener("willFocus", async () => {
+        this.willFocus = this.props.navigation.addListener("focus", async () => {
             await this.unsubscribeSocketNewConversation();
             await this.unsubscribeSocket();
             await this.getMessages();
@@ -96,7 +96,6 @@ class HelpChatScreen extends Component {
     async componentWillUnmount() {
         await this.unsubscribeSocketNewConversation();
 		this.backHandler.remove();
-		this.willBlur.remove();
 	}
 
     /**
