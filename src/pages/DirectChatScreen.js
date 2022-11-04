@@ -13,7 +13,7 @@ import { withNavigation } from '@react-navigation/compat';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
 import QuickReplies from 'react-native-gifted-chat/lib/QuickReplies';
-import { handlerException } from '../../../../App/Services/Exception';
+import { handleException } from '@codificar/use-log-errors'; 
 
 const send = require('react-native-chat/src/img/send.png');
 
@@ -27,6 +27,8 @@ class DirectChatScreen extends Component {
             id: paramRoute.id,
             token: paramRoute.token,
             receiver: paramRoute.receiver,
+            projectName: paramRoute.projectName || 'undefined',
+            appType: paramRoute.appType || 'undefined',
             messages: [],
             conversation: 0,
             ledger_id: 0,
@@ -62,7 +64,13 @@ class DirectChatScreen extends Component {
                 WebSocketServer.socket = WebSocketServer.connect(this.props.socket_url);
             }
         } catch (error) {
-            handlerException('connectSocket - DirectChatScreen', error);
+            handleException({
+                baseUrl: this.state.url,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'connectSocket - DirectChatScreen',
+                error,
+            });
         }
     }
 

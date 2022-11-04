@@ -12,7 +12,7 @@ import { getMessageHelpChat, sendMessageHelpChat } from '../services/api';
 import { withNavigation } from '@react-navigation/compat';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
-import { handlerException } from '../../../../App/Services/Exception';
+import { handleException } from '@codificar/use-log-errors'; 
 
 const send = require('react-native-chat/src/img/send.png');
 
@@ -26,6 +26,8 @@ class HelpChatScreen extends Component {
             id: paramRoute.id,
             token: paramRoute.token,
             request_id: paramRoute.request_id,
+            projectName: paramRoute.projectName || 'undefined',
+            appType: paramRoute.appType || 'undefined',
             conversation: null,
             messages: [],
             ledger_id: 0,
@@ -59,7 +61,13 @@ class HelpChatScreen extends Component {
                 WebSocketServer.socket = WebSocketServer.connect(this.props.socket_url);
             }
         } catch (error) {
-            handlerException('connectSocket - HelpChatScreen', error);
+            handleException({
+                baseUrl: this.state.url,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'connectSocket - HelpChatScreen',
+                error,
+            });
         }
     }
 
