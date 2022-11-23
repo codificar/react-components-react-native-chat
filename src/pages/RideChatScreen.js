@@ -6,6 +6,7 @@ import {
     Vibration,
     StyleSheet,
     Image,
+    KeyboardAvoidingView,
     RefreshControl,
     Text,
     SafeAreaView
@@ -400,43 +401,45 @@ class RideChatScreen extends Component {
     render() {
 
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.headerView}>
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      style={styles.backButton}
-                      onPress={() => this.props.navigation.goBack()}
-                    >
-                      <MaterialIcons name="keyboard-arrow-left" color={this.state.color} size={35} />
-                    </TouchableOpacity>
-                    { !(this.state.impersonate && this.state.is_customer_chat) && (
-                        <Image
-                            style={styles.avatarImg}
-                            source={{ uri: this.state.userAvatar }}
-                        />
-                    )}
-                    <Text style={styles.userName}>
-                        {(this.state.impersonate && this.state.is_customer_chat) ? 'Chat com usuário' : this.state.userName}
-                    </Text>
-                </View>
-                <GiftedChat
-                    messages={this.state.messages}
-                    placeholder={strings.send_message}
-                    locale='pt'
-                    dateFormat='L'
-                    onSend={messages => this.onSend(messages)}
-                    user={{ _id: this.state.userLedgeId }}
-                    renderSend={this.renderSend}
-                    renderDay={this.renderDay}
-                    renderBubble={this.renderBubble}
-                    renderMessageText={this.renderMessageText}
-                    renderTime={this.renderTime}
-                    textInputProps={{ keyboardType: this.state.isMessageValue ? 'numeric' : 'default' }}
-                    listViewProps={{
-                        refreshControl: this.renderRefreshControl()
-                    }}
-                />
-            </SafeAreaView>
+            <KeyboardAvoidingView>
+                <SafeAreaView style={styles.container}>
+                    <View style={styles.headerView}>
+                        <TouchableOpacity
+                        activeOpacity={0.7}
+                        style={styles.backButton}
+                        onPress={() => this.props.navigation.goBack()}
+                        >
+                        <MaterialIcons name="keyboard-arrow-left" color={this.state.color} size={35} />
+                        </TouchableOpacity>
+                        { !(this.state.impersonate && this.state.is_customer_chat) && (
+                            <Image
+                                style={styles.avatarImg}
+                                source={{ uri: this.state.userAvatar }}
+                            />
+                        )}
+                        <Text style={styles.userName}>
+                            {(this.state.impersonate && this.state.is_customer_chat) ? 'Chat com usuário' : this.state.userName}
+                        </Text>
+                    </View>
+                    <GiftedChat
+                        messages={this.state.messages}
+                        placeholder={strings.send_message}
+                        locale='pt'
+                        dateFormat='L'
+                        onSend={messages => this.onSend(messages)}
+                        user={{ _id: this.state.userLedgeId }}
+                        renderSend={this.renderSend}
+                        renderDay={this.renderDay}
+                        renderBubble={this.renderBubble}
+                        renderMessageText={this.renderMessageText}
+                        renderTime={this.renderTime}
+                        textInputProps={{ keyboardType: this.state.isMessageValue ? 'numeric' : 'default' }}
+                        listViewProps={{
+                            refreshControl: this.renderRefreshControl()
+                        }}
+                    />
+                </SafeAreaView>
+            </KeyboardAvoidingView>
         )
     }
 }
