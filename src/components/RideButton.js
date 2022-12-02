@@ -30,7 +30,8 @@ class RideButton extends Component {
             text: this.props.text || '',
             buttonStyle: this.props.buttonStyle || styles.iconCallUser,
             titleStyle: this.props.titleStyle || styles.title,
-            iconStyle: this.props.iconStyle || styles.img
+            iconStyle: this.props.iconStyle || styles.img,
+            action: this.props.action || []
         }
 
         this.socket = WebSocketServer.connect(this.props.socket_url);
@@ -47,7 +48,8 @@ class RideButton extends Component {
     }
 
     componentDidMount() {
-        const newActions = this.props.actions.map(action => ({
+        let actions = this.state.actions;
+        const newActions = actions.map(action => ({
             ...action,
             render: () => this.renderAction(action)
         }));
