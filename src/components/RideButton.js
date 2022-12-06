@@ -31,7 +31,7 @@ class RideButton extends Component {
             buttonStyle: this.props.buttonStyle || styles.iconCallUser,
             titleStyle: this.props.titleStyle || styles.title,
             iconStyle: this.props.iconStyle || styles.img,
-            action: this.props.action || []
+            actions: this.props.actions || []
         }
 
         this.socket = WebSocketServer.connect(this.props.socket_url);
@@ -230,7 +230,7 @@ class RideButton extends Component {
                         position="left"
                         floatingIcon={icon}
                         distanceToEdge={this.props.distanceToEdge}
-                        actions={this.props.actions}
+                        actions={this.state.actions}
                         onPressItem={name => {
                             this.handleChat(name);
                         }}
