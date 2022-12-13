@@ -401,7 +401,7 @@ class RideChatScreen extends Component {
     render() {
 
         return (
-            <KeyboardAvoidingView>
+            <KeyboardAvoidingView style={styles.container}>
                 <SafeAreaView style={styles.container}>
                     <View style={styles.headerView}>
                         <TouchableOpacity
