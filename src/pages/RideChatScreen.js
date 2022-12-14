@@ -7,6 +7,7 @@ import {
     StyleSheet,
     Image,
     KeyboardAvoidingView,
+    Platform,
     RefreshControl,
     Text,
     SafeAreaView
@@ -401,7 +402,7 @@ class RideChatScreen extends Component {
     render() {
 
         return (
-            <KeyboardAvoidingView style={styles.container}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? null : 'padding'} style={styles.container}>
                 <SafeAreaView style={styles.container}>
                     <View style={styles.headerView}>
                         <TouchableOpacity
