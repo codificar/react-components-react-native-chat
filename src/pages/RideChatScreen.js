@@ -53,6 +53,7 @@ class RideChatScreen extends Component {
             userName: paramRoute.userName,
             userAvatar: paramRoute.userAvatar,
             impersonate: paramRoute.impersonate,
+            refreshInterval: paramRoute.refreshInterval,
             token: paramRoute.token,
             conversation_id: paramRoute.conversation_id,
             is_customer_chat: paramRoute.is_customer_chat,
@@ -82,6 +83,12 @@ class RideChatScreen extends Component {
             return true;
         });
 
+        if (this.state.refreshInterval) {
+            this.refreshInterval = setInterval(() => {
+                this.getConversation(true);
+            }, this.state.refreshInterval);
+        }
+        
         const timer = setTimeout(() => {
             this.subscribeSocketNewConversation(this.state.requestId)
         }, 1002);
@@ -97,6 +104,8 @@ class RideChatScreen extends Component {
           console.log('this.componentWillUnmount Error:', error);
         }
     
+        if (this.state.refreshInterval)
+            clearInterval(this.refreshInterval);
       }
 
     async getConversation(refresh = false) {

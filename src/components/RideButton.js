@@ -57,6 +57,17 @@ class RideButton extends Component {
         this.setState({
             actions: newActions
         });
+
+        if (this.props.refreshInterval) {
+            this.refreshInterval = setInterval(async () => {
+                await this.getConversation();
+            }, this.props.refreshInterval);
+        }
+    }
+
+    componentWillUnmount() {
+        if (this.props.refreshInterval)
+            clearInterval(this.refreshInterval);
     }
   
     renderAction(action) {
@@ -217,7 +228,8 @@ class RideButton extends Component {
                 color: this.props.color,
                 userName: userName,
                 userAvatar: userAvatar,
-                impersonate: this.props.impersonate
+                impersonate: this.props.impersonate,
+                refreshInterval: this.props.refreshInterval
         }})
     }
 
