@@ -47,7 +47,7 @@ class RideButton extends Component {
 		});
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         let actions = this.state.actions;
         const newActions = actions.map(action => ({
             ...action,
@@ -57,6 +57,8 @@ class RideButton extends Component {
         this.setState({
             actions: newActions
         });
+
+        await this.getConversation();
 
         if (this.props.refreshInterval) {
             this.refreshInterval = setInterval(async () => {
@@ -68,6 +70,9 @@ class RideButton extends Component {
     componentWillUnmount() {
         if (this.props.refreshInterval)
             clearInterval(this.refreshInterval);
+
+        this.unsubscribeSocket();
+        this.unsubscribeSocketNewConversation();
     }
   
     renderAction(action) {
@@ -152,8 +157,10 @@ class RideButton extends Component {
 
     async getConversation() {
 		try {
-			const data = await this.callApiConversation(0);
-            const dataCustomerChat = await this.callApiConversation(1);
+			const dataPromise = this.callApiConversation(0);
+            const dataCustomerChatPromise = this.callApiConversation(1);
+
+            const [data, dataCustomerChat] = await Promise.all([dataPromise, dataCustomerChatPromise]);
 
             if (data.id !== 0)
                 this.subscribeSocketConversation(data.id);
@@ -267,12 +274,13 @@ class RideButton extends Component {
                         <Text style={this.state.titleStyle}>{this.state.text}</Text>
                     )}
                     <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-                        <Badger contador={this.state.countNewMessage}
+                        <Badger contador={this.state.is_customer_chat ? this.state.countNewMessageCustomer : this.state.countNewMessage}
                             position={{
                                 position: 'absolute',
-                                top: -8,
-                                left: -8,
-                                zIndex: 999
+                                top: -10,
+                                left: 10,
+                                zIndex: 999,
+                                elevation: 6
                             }}
                         />
                         <Image 
