@@ -420,7 +420,7 @@ class RideChatScreen extends Component {
 
         return (
             <KeyboardAvoidingView behavior={this.getBehavior()} style={styles.container}>
-                <SafeAreaView style={styles.container}>
+                <SafeAreaView style={styles.safeArea}>
                     <View style={styles.headerView}>
                         <TouchableOpacity
                         activeOpacity={0.7}
@@ -465,6 +465,10 @@ class RideChatScreen extends Component {
 const styles = StyleSheet.create({
     container: {
         flex: 1
+    },
+    safeArea: {
+        flex: 1,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
     },
     messageText: {
         color: '#211F1F'
