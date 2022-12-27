@@ -408,10 +408,18 @@ class RideChatScreen extends Component {
         />
     }
 
+    getBehavior() {
+        if (!this.state.impersonate && Platform.OS !== 'ios') {
+            return 'padding';
+        }
+
+        return null;
+    }
+
     render() {
 
         return (
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? null : 'padding'} style={styles.container}>
+            <KeyboardAvoidingView behavior={this.getBehavior()} style={styles.container}>
                 <SafeAreaView style={styles.container}>
                     <View style={styles.headerView}>
                         <TouchableOpacity
