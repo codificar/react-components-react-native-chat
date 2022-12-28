@@ -10,7 +10,8 @@ import {
     Platform,
     RefreshControl,
     Text,
-    SafeAreaView
+    SafeAreaView,
+    StatusBar
 } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { 
