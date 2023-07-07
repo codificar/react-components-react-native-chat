@@ -42,14 +42,11 @@ export function getMessageChat(url, id, token, conversation_id) {
  * @param {number} message_id 
  */
 export function seeMessage(url, id, token, message_id) {
-    let formdata = new FormData()
-
-    formdata.append('id', id)
-    formdata.append('token', token)
-    formdata.append('message_id', message_id)
-
-    console.log('form: ', formdata)
-    return axios.post(`${url}/api/libs/chat/seen`, formdata)
+    return axios.post(`${url}/api/libs/chat/seen`, {
+        id,
+        token,
+        message_id
+    })
 }
 
 /**

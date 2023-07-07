@@ -105,10 +105,7 @@ class RideChatScreen extends Component {
             return true;
         });
 
-        const filenameOrFile = this.state.audio ? this.state.audio : "beep.wav";
-        const basePath = this.state.audio ? null : Sound.MAIN_BUNDLE;
-
-        this.setSound(filenameOrFile, basePath);
+        this.setSound();
 
         const timer = setTimeout(async () => {
             await this.connectSocket();
@@ -134,7 +131,9 @@ class RideChatScreen extends Component {
         };
     }
 
-    setSound(filenameOrFile, basePath) {
+    setSound() {
+        const filenameOrFile = this.state.audio ? this.state.audio : "beep.wav";
+        const basePath = this.state.audio ? null : Sound.MAIN_BUNDLE;
         try {
             const sound = new Sound(filenameOrFile, basePath, (error) => {
                 if (error) {
