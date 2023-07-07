@@ -29,10 +29,14 @@ class RideButton extends Component {
             playSoundError: true,
             userName: '',
             userAvatar: '',
-            contNewMensag: 0,
-            is_customer_chat: this.props.is_customer_chat ? this.props.is_customer_chat : 0,
-            text: this.props.text ? this.props.text : '',
-            buttonStyle: this.props.buttonStyle ? this.props.buttonStyle : styles.iconCallUser
+            countNewMessage: 0,
+            countNewMessageCustomer: 0,
+            is_customer_chat: this.props.is_customer_chat || 0,
+            text: this.props.text || '',
+            buttonStyle: this.props.buttonStyle || styles.iconCallUser,
+            titleStyle: this.props.titleStyle || styles.title,
+            iconStyle: this.props.iconStyle || styles.img,
+            actions: this.props.actions || []
         }
 
         this.connectSocket();
@@ -47,6 +51,68 @@ class RideButton extends Component {
 			await this.unsubscribeSocket();
 			await this.unsubscribeSocketNewConversation();
 		});
+    }
+
+
+    async componentDidMount() {
+        
+        this.initStateActions();
+        this.initStateSound();
+        await this.getConversation();
+
+        if (this.props.refreshInterval) {
+            this.refreshInterval = setInterval(async () => {
+                await this.getConversation();
+                await this.connectSocket();
+                this.subscribeSocketConversation(this.props.request_id);
+            }, this.props.refreshInterval);
+        }
+
+        const timer = setInterval(async () => {
+        }, 1002);
+        return () => clearTimeout(timer);
+        
+    }
+
+    componentWillUnmount() {
+        if (this.props.refreshInterval)
+            clearInterval(this.refreshInterval);
+
+        this.unsubscribeSocket();
+        this.unsubscribeSocketNewConversation();
+    }
+
+    initStateActions() {
+        let actions = this.state.actions;
+        const newActions = actions.map(action => ({
+            ...action,
+            render: () => this.renderAction(action)
+        }));
+
+        if(newActions) {
+            this.setState({
+                actions: newActions
+            });
+        }
+    }
+
+    initStateSound() {
+        const filenameOrFile = this.state.audio ? this.state.audio : "beep.wav";
+        const basePath = this.state.audio ? null : Sound.MAIN_BUNDLE;
+
+        const sound = new Sound(filenameOrFile, basePath, (error) => {
+            if(error) {
+                console.log('failed to load the sound', error);
+                return;
+            }
+        });
+
+        if(sound) {
+            this.setState({ 
+                playSound: sound,
+                playSoundError: false 
+            })
+        }
     }
 
     async connectSocket() {
@@ -67,31 +133,29 @@ class RideButton extends Component {
         }
     }
 
-    componentDidMount() {
-
-        const filenameOrFile = this.state.audio ? this.state.audio : "beep.wav";
-        const basePath = this.state.audio ? null : Sound.MAIN_BUNDLE;
-
-        const sound = new Sound(filenameOrFile, basePath, (error) => {
-            if(error) {
-                console.log('failed to load the sound', error);
-                return;
-            }
-        });
-
-        if(sound) {
-            this.setState({ 
-                playSound: sound,
-                playSoundError: false 
-            })
-        }
-
-        const timer = setTimeout(async () => {
-            await this.connectSocket();
-            this.subscribeSocketConversation(this.props.request_id);
-        }, 1002);
-        return () => clearTimeout(timer);
-        
+    renderAction(action) {
+        return (
+            <>
+                <View style={{ ...styles.actionButton, backgroundColor: action.color }}>
+                    <Badger contador={ action.name === 'bt_customer' ? this.state.countNewMessageCustomer : this.state.countNewMessage }
+                        position={{
+                            position: 'absolute',
+                            top: -8,
+                            left: 28,
+                            zIndex: 999,
+                            elevation: 6
+                        }}
+                    />
+                    <Image
+                        style={{...styles.img, tintColor: 'white'}}
+                        source={icon}
+                    />
+                </View>
+                <View style={styles.viewTitle}>
+                    <Text style={{ ...styles.title, marginLeft: 10 }}>{action.text}</Text>
+                </View>
+            </>
+        )
     }
 
     subscribeSocketConversation(id) {
@@ -104,7 +168,7 @@ class RideButton extends Component {
         
                         //this.playSoundRequest();
                         this.setState({
-                            contNewMensag: this.state.contNewMensag + 1
+                            countNewMessage: this.state.countNewMessage + 1
                         });
                     })
             }
@@ -127,7 +191,7 @@ class RideButton extends Component {
                     .on("newConversation", (channel, data) => {
                         this.setState({
                             conversation_id: data.conversation_id,
-                            contNewMensag: 1
+                            countNewMessage: 1
                         });
                         //this.playSoundRequest()
                         console.log('Evento socket newConversation disparado! ', channel, data)
@@ -211,13 +275,23 @@ class RideButton extends Component {
 
     async getConversation() {
 		try {
-			const data = await this.callApiConversation();
+			const dataPromise = this.callApiConversation(0);
+            const dataCustomerChatPromise = this.callApiConversation(1);
+
+            const [data, dataCustomerChat] = await Promise.all([dataPromise, dataCustomerChatPromise]);
+
+            if (data.id !== 0)
+                this.subscribeSocketConversation(data.id);
+            if (dataCustomerChat.id !== 0)
+                this.subscribeSocketConversation(dataCustomerChat.id);
+            
 			this.setState({
                 receiveID: data.user.id,
                 conversation_id: data.id,
                 userName: data.user.name,
                 userAvatar: data.user.image,
-                contNewMensag: data.new_messages
+                countNewMessage: data.new_messages || 0,
+                countNewMessageCustomer: dataCustomerChat.new_messages || 0
 			})
             this.subscribeSocketConversation(data.id);
 
@@ -289,22 +363,34 @@ class RideButton extends Component {
                 baseUrl: this.props.baseUrl,
                 projectName: this.props.projectName,
                 appType: this.props.appType,
+                refreshInterval: this.props.refreshInterval
         }})
     }
 
     render() {
         return (
             this.props.impersonate ? (
-                <FloatingAction
-                    color="white"
-                    position="left"
-                    floatingIcon={icon}
-                    distanceToEdge={this.props.distanceToEdge}
-                    actions={this.props.actions}
-                    onPressItem={name => {
-                        this.handleChat(name);
-                    }}
-                />
+                <>
+                    <FloatingAction
+                        color="white"
+                        position="left"
+                        floatingIcon={icon}
+                        distanceToEdge={this.props.distanceToEdge}
+                        actions={this.state.actions}
+                        onPressItem={name => {
+                            this.handleChat(name);
+                        }}
+                    />
+                    <Badger contador={this.state.countNewMessage + this.state.countNewMessageCustomer}
+                        position={{
+                            bottom: this.props.distanceToEdge.vertical + 40,
+                            position: 'absolute',
+                            left: this.props.distanceToEdge.horizontal + 40,
+                            zIndex: 999,
+                            elevation: 6
+                        }}
+                    />
+                </>
             ) : (
                 <TouchableOpacity
                     style={this.state.buttonStyle}
@@ -312,18 +398,20 @@ class RideButton extends Component {
                     activeOpacity={0.6}
                 >
                     { this.state.text.length > 0 && (
-                        <Text style={styles.title}>{this.state.text}</Text>
+                        <Text style={this.state.titleStyle}>{this.state.text}</Text>
                     )}
                     <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-                        <Badger contador={this.state.contNewMensag}
+                        <Badger contador={this.state.is_customer_chat ? this.state.countNewMessageCustomer : this.state.countNewMessage}
                             position={{
                                 position: 'absolute',
-                                top: -8,
-                                left: -8,
-                                zIndex: 999
-                            }} />
+                                top: -10,
+                                left: 10,
+                                zIndex: 999,
+                                elevation: 6
+                            }}
+                        />
                         <Image 
-                            style={styles.img}
+                            style={this.state.iconStyle}
                             source={icon}
                         />
                     </View>
@@ -334,6 +422,23 @@ class RideButton extends Component {
 }
 
 const styles = StyleSheet.create({
+    actionButton: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 45,
+        borderRadius: 22,
+        aspectRatio: 1
+    },
+    viewTitle: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        marginLeft: 10,
+        paddingTop: 5,
+        paddingBottom: 5,
+        borderRadius: 5
+    },  
     chatBtn: {
         marginRight: 16,
         backgroundColor: '#eee',
