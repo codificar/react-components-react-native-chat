@@ -69,12 +69,16 @@ class RideButton extends Component {
         this.initiIntervalCallApiConversation();
 
         return () => {
-            clearInterval(this.intervalConversation);
-            clearInterval(this.refreshInterval);
+            this.clearInterval();
         }
         
     }
 
+    clearInterval() {
+        clearInterval(this.intervalConversation);
+        clearInterval(this.refreshInterval);
+    }
+    
     initIntervalGetConversation() {
         if (this.props.refreshInterval) {
             this.refreshInterval = setInterval(() => {

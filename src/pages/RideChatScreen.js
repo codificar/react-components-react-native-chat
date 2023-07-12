@@ -74,7 +74,7 @@ class RideChatScreen extends Component {
         this.willBlur = this.props.navigation.addListener("willBlur", async () => {
             await this.unsubscribeSocket();
             await this.unsubscribeSocketNewConversation();
-            this.clearIntervalConverstaion();
+            this.clearInterval();
         })
 
         this.willFocus = this.props.navigation.addListener("willFocus", async () => {
@@ -118,8 +118,7 @@ class RideChatScreen extends Component {
         this.initiIntervalCallApiConversation();
         
         return () => {
-            clearInterval(this.intervalConversation);
-            clearInterval(this.refreshInterval);
+            this.clearInterval()
         };
     }
 
@@ -174,7 +173,7 @@ class RideChatScreen extends Component {
             this.unsubscribeSocket();
             this.unsubscribeSocketNewConversation();
             this.backHandler.remove();
-            this.clearIntervalConverstaion();
+            this.clearInterval();
         } catch (error) {
             handleException({
                 baseUrl: this.state.baseUrl,
@@ -203,7 +202,7 @@ class RideChatScreen extends Component {
             ) {
                 this.setState({ conversation_id: data.conversations[0].id });
                 this.getConversation();
-                this.clearIntervalConverstaion();
+                this.clearInterval();
             }
         } catch (error) {
             handleException({
@@ -216,8 +215,9 @@ class RideChatScreen extends Component {
         }
     }
 
-    clearIntervalConverstaion() {
+    clearInterval() {
         clearInterval(this.state.intervalConversation);
+        clearInterval(this.intervalConversation);
         clearInterval(this.refreshInterval);
         this.setState({
             intervalConversation: null
