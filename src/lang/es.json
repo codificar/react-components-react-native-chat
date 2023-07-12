@@ -1,4 +1,5 @@
 {
+    "locale": "es",
     "directs": "Conversaciones",
     "new_direct": "Nueva conversación",
     "send_message": "Escriba Mensaje",
