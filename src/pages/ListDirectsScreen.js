@@ -9,7 +9,7 @@ import {
     BackHandler,
     RefreshControl
 } from 'react-native';
-import { withNavigation } from 'react-navigation';
+import { withNavigation } from '@react-navigation/compat';
 import { listDirectConversations } from '../services/api';
 import Toolbar from '../components/ToolBar';
 import strings from '../lang/strings';
@@ -20,7 +20,7 @@ const box_img = require('react-native-chat/src/img/box.png');
 class ListDirectsScreen extends Component {
     constructor(props) {
         super(props);
-        var paramRoute = this.props.navigation != undefined ? this.props.navigation.state.params : this.props.route.params;
+        var paramRoute = this.props.navigation.state != undefined ? this.props.navigation.state.params : this.props.route.params;
 
         if (paramRoute === undefined)
             paramRoute = this.props.route.params;
@@ -53,7 +53,6 @@ class ListDirectsScreen extends Component {
 
     componentWillUnmount() {
 		this.backHandler.remove();
-		//this.willFocus.remove();
 	}
 
     async listDirectConversations() {
@@ -119,12 +118,14 @@ class ListDirectsScreen extends Component {
                         style={styles.box_new}
                     >
                         <TouchableOpacity
-                            onPress={() => this.props.navigation.navigate('ListProvidersForConversation', {
-                                url: this.state.url,
-                                socket_url: this.state.socket_url,
-                                id: this.state.id,
-                                token: this.state.token
-                            })}
+                            onPress={() => this.props.navigation.navigate('ChatStack', {
+                                screen: 'ListProvidersForConversation',
+                                params: {
+                                    url: this.state.url,
+                                    socket_url: this.state.socket_url,
+                                    id: this.state.id,
+                                    token: this.state.token
+                            }})}
                         >
                             <Text style={styles.box_new_txt}>
                                 {strings.new_direct}

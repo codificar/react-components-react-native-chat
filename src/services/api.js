@@ -7,12 +7,13 @@ import axios from 'axios';
  * @param {string} token 
  * @param {number} request_id 
  */
-export function getConversation(url, id, token, request_id) {
+export function getConversation(url, id, token, request_id, isCustomerChat = 0) {
     return axios.get(`${url}/api/libs/chat/conversation`, {
         params: {
             id: id,
             token: token,
-            request_id: request_id
+            request_id: request_id,
+            isCustomerChat: isCustomerChat
         }
     })
 }
@@ -67,7 +68,8 @@ export function sendMessage(
     message,
     receiver_id,
     type = 'text',
-    conversationId = 0
+    conversationId = 0,
+    isCustomerChat = 0
 ) {
     return axios.post(`${url}/api/libs/chat/send`, {
         id: id,
@@ -76,7 +78,8 @@ export function sendMessage(
         message: message,
         receiver_id: receiver_id,
         type: type,
-        conversation_id: conversationId 
+        conversation_id: conversationId,
+        isCustomerChat: isCustomerChat,
     });
 }
 

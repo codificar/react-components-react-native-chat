@@ -7,7 +7,8 @@ import {
     StyleSheet,
     Image,
     RefreshControl,
-    Text
+    Text,
+    SafeAreaView
 } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import Sound from "react-native-sound";
@@ -21,14 +22,16 @@ import {
 } from 'react-native-gifted-chat';
 import { getConversation, getMessageChat, seeMessage, sendMessage } from '../services/api';
 import { withNavigation } from 'react-navigation';
-import WebSocketServer from "../services/socket";
-import strings from '../lang/strings';
 import { handleException } from '@codificar/use-log-errors'; 
+import { REFRESH_INTERVAL } from '../utils/constants';
+
+import WebSocketServer from "../services/socket";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import strings from '../lang/strings';
 
 import 'dayjs/locale/en';
 import 'dayjs/locale/pt-br';
 import 'dayjs/locale/es';
-import { REFRESH_INTERVAL } from '../utils/constants';
 
 const send = require('react-native-chat/src/img/send.png');
 var color = '#FBFBFB';
@@ -55,8 +58,12 @@ class RideChatScreen extends Component {
             playSoundError: true,
             url: paramRoute.url,
             id: paramRoute.id,
+            userName: paramRoute.userName,
+            userAvatar: paramRoute.userAvatar,
+            impersonate: paramRoute.impersonate,
             token: paramRoute.token,
             conversation_id: paramRoute.conversation_id,
+            isCustomerChat: paramRoute.isCustomerChat,
             color: paramRoute.color,
             contNewMensag: 0,
             is_refreshing: false,
@@ -173,8 +180,8 @@ class RideChatScreen extends Component {
         try {
             this.unsubscribeSocket();
             this.unsubscribeSocketNewConversation();
-            this.backHandler.remove();
             this.clearInterval();
+            this.backHandler.remove();
         } catch (error) {
             handleException({
                 baseUrl: this.state.baseUrl,
@@ -520,6 +527,7 @@ class RideChatScreen extends Component {
                 this.state.receiveID,
                 type,
                 conversationId,
+                this.state.isCustomerChat
             );
 
             var responseJson = response.data;
@@ -645,9 +653,24 @@ class RideChatScreen extends Component {
     render() {
         const isConversation = this.state.conversation_id && this.state.conversation_id != 0;
         return (
-            <View style={styles.container}>
-                <View style={{ marginLeft: 25 }}>
-                    <Toolbar onPress={() => this.props.navigation.goBack()} />
+            <SafeAreaView style={styles.container}>
+                <View style={styles.headerView}>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      style={styles.backButton}
+                      onPress={() => this.props.navigation.goBack()}
+                    >
+                      <MaterialIcons name="keyboard-arrow-left" color={this.state.color} size={35} />
+                    </TouchableOpacity>
+                    { !(this.state.impersonate && this.state.isCustomerChat) && (
+                        <Image
+                            style={styles.avatarImg}
+                            source={{ uri: this.state.userAvatar }}
+                        />
+                    )}
+                    <Text style={styles.userName}>
+                        {(this.state.impersonate && this.state.isCustomerChat) ? 'Chat com usuário' : this.state.userName}
+                    </Text>
                 </View>
                 { !isConversation 
                     ? ( <View style={styles.containerNoConversation}>
@@ -673,7 +696,7 @@ class RideChatScreen extends Component {
                         refreshControl: this.renderRefreshControl()
                     }}
                 />
-            </View>
+            </SafeAreaView>
         )
     }
 }
@@ -711,6 +734,31 @@ const styles = StyleSheet.create({
         height: 30,
         justifyContent: "center",
         alignItems: "center"
+    },
+    avatarImg: {
+        width: 40,
+        aspectRatio: 1,
+        borderRadius: 20,
+        marginRight: 10,
+        borderWidth: 1,
+        borderColor: 'lightgray'
+    },
+    backButton: {
+        marginRight: 10,
+        justifyContent: 'center'
+    },
+    headerView: {
+        width: '100%',
+        flexDirection: 'row',
+        paddingTop: 10,
+        paddingBottom: 10,
+        alignItems: 'center',
+        backgroundColor: 'white'
+    },
+    userName: {
+        fontSize: 18,
+        color: 'black',
+        fontWeight: 'bold'
     },
     send: {
         width: 25,

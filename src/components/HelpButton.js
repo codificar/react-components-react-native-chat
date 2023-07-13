@@ -6,7 +6,7 @@ import {
     StyleSheet,
     Image
 } from 'react-native';
-import { withNavigation } from 'react-navigation';
+import { withNavigation } from '@react-navigation/compat';
 
 const icon = require('react-native-chat/src/img/chat.png');
 
