@@ -28,6 +28,7 @@ import { handleException } from '@codificar/use-log-errors';
 import 'dayjs/locale/en';
 import 'dayjs/locale/pt-br';
 import 'dayjs/locale/es';
+import { REFRESH_INTERVAL } from '../utils/constants';
 
 const send = require('react-native-chat/src/img/send.png');
 var color = '#FBFBFB';
@@ -63,7 +64,7 @@ class RideChatScreen extends Component {
             baseUrl: paramRoute.basUrl || '',
             projectName: paramRoute.projectName || '',
             appType: paramRoute.appType || '',
-            refreshInterval: paramRoute.refreshInterval || 5000,
+            refreshInterval: paramRoute.refreshInterval || REFRESH_INTERVAL,
             socket_url: paramRoute.socket_url || null,
         }
 

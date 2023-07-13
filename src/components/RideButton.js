@@ -12,6 +12,7 @@ import WebSocketServer from "../services/socket";
 import Sound from "react-native-sound";
 import Badger from './Badger';
 import { handleException } from '@codificar/use-log-errors'; 
+import { REFRESH_INTERVAL } from '../utils/constants';
 
 const icon = require('react-native-chat/src/img/chat.png');
 
@@ -22,7 +23,7 @@ class RideButton extends Component {
         this.state = {
             receiveID: 0,
             conversation_id: 0,
-            contNewMensag: 0,
+            countNewMessage: 0,
             audio: this.props.audio,
             playSound: null,
             playSoundError: true
@@ -134,7 +135,7 @@ class RideButton extends Component {
                     .emit("subscribe", { channel: "conversation." + id })
                     .on("newMessage", (channel, data) => {
                         this.setState({
-                            contNewMensag: this.state.contNewMensag + 1
+                            countNewMessage: this.state.countNewMessage + 1
                         });
                     })
             }
@@ -157,7 +158,7 @@ class RideButton extends Component {
                     .on("newConversation", (channel, data) => {
                         this.setState({
                             conversation_id: data.conversation_id,
-                            contNewMensag: 1
+                            countNewMessage: 1
                         });
                         //this.playSoundRequest()
                         console.log('Evento socket newConversation disparado! ', channel, data)
@@ -245,7 +246,7 @@ class RideButton extends Component {
 			this.setState({
                 receiveID: data.user.id,
                 conversation_id: data.id,
-                contNewMensag: data.new_messages
+                countNewMessage: data.new_messages
 			})
             this.subscribeSocketConversation(data.id);
 
@@ -311,7 +312,7 @@ class RideButton extends Component {
             baseUrl: this.props.baseUrl,
             projectName: this.props.projectName,
             appType: this.props.appType,
-            refreshInterval: this.props.refreshInterval
+            refreshInterval: this.props.refreshInterval || REFRESH_INTERVAL
         })
     }
 
@@ -324,7 +325,7 @@ class RideButton extends Component {
                     activeOpacity={0.6}
                 >
                     <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-                        <Badger contador={this.state.contNewMensag}
+                        <Badger contador={this.state.countNewMessage}
                             position={{
                                 position: 'absolute',
                                 top: -8,
