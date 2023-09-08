@@ -1,0 +1,11 @@
+{
+    "locale": "es-py",
+    "directs": "Conversaciones",
+    "new_direct": "Nueva conversación",
+    "send_message": "Escribe un mensaje",
+    "providers": "Proveedores",
+    "search_providers": "Buscar proveedores",
+    "no_directs": "Ninguna conversación aún...",
+    "chat": "Chatear",
+    "welcome_message": "Hola, ¿cómo estás? Si tienes alguna pregunta, solo tienes que enviar un mensaje."
+}
