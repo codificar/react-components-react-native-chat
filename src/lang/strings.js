@@ -16,5 +16,8 @@ if (deviceLanguage.substring(0, 2) == 'en'){
 }else if(deviceLanguage.substring(0, 2) == 'es'){
     strings = require('./es.json');
 }
+else if(deviceLanguage.substring(0, 2) == 'es-PY'){
+    strings = require('./es_PY.json');
+}
 
 export default strings;
