@@ -1,9 +1,11 @@
 {
+    "locale": "es",
     "directs": "Conversaciones",
     "new_direct": "Nueva conversación",
     "send_message": "Escriba Mensaje",
     "providers": "Proveedores",
     "search_providers": "Proveedores de búsqueda",
     "no_directs": "Aún no hay conversaciones...",
-    "chat": "Hablar"
+    "chat": "Hablar",
+    "welcome_message": "Olá tudo bem? qualquer dúvida basta enviar uma mensagem.¿Hola todo bien? Cualquier pregunta solo envía un mensaje."
 }

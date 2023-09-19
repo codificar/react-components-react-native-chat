@@ -1,9 +1,11 @@
 {
+    "locale": "en",
     "directs": "Conversations",
     "new_direct": "New conversation",
     "send_message": "Send a message",
     "providers": "Providers",
     "search_providers": "Search providers",
     "no_directs": "No conversations yet...",
-    "chat": "Chat"
+    "chat": "Chat",
+    "welcome_message": "Hello how are you? Any questions just send a message."
 }

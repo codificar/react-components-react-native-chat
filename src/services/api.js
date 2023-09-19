@@ -7,13 +7,13 @@ import axios from 'axios';
  * @param {string} token 
  * @param {number} request_id 
  */
-export function getConversation(url, id, token, request_id, is_customer_chat = 0) {
+export function getConversation(url, id, token, request_id, isCustomerChat = 0) {
     return axios.get(`${url}/api/libs/chat/conversation`, {
         params: {
             id: id,
             token: token,
             request_id: request_id,
-            is_customer_chat: is_customer_chat
+            isCustomerChat: isCustomerChat
         }
     })
 }
@@ -43,14 +43,11 @@ export function getMessageChat(url, id, token, conversation_id) {
  * @param {number} message_id 
  */
 export function seeMessage(url, id, token, message_id) {
-    let formdata = new FormData()
-
-    formdata.append('id', id)
-    formdata.append('token', token)
-    formdata.append('message_id', message_id)
-
-    console.log('form: ', formdata)
-    return axios.post(`${url}/api/libs/chat/seen`, formdata)
+    return axios.post(`${url}/api/libs/chat/seen`, {
+        id,
+        token,
+        message_id
+    })
 }
 
 /**
@@ -70,8 +67,9 @@ export function sendMessage(
     request_id,
     message,
     receiver_id,
-    is_customer_chat = 0,
-    type = 'text'
+    type = 'text',
+    conversationId = 0,
+    isCustomerChat = 0
 ) {
     return axios.post(`${url}/api/libs/chat/send`, {
         id: id,
@@ -79,8 +77,9 @@ export function sendMessage(
         request_id: request_id,
         message: message,
         receiver_id: receiver_id,
-        is_customer_chat: is_customer_chat,
-        type: type
+        type: type,
+        conversation_id: conversationId,
+        isCustomerChat: isCustomerChat,
     });
 }
 

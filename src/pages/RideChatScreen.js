@@ -6,11 +6,15 @@ import {
     Vibration,
     StyleSheet,
     Image,
+    KeyboardAvoidingView,
+    Platform,
     RefreshControl,
     Text,
-    SafeAreaView
+    SafeAreaView,
+    StatusBar
 } from 'react-native';
 import Toolbar from '../components/ToolBar';
+import Sound from "react-native-sound";
 import { 
     GiftedChat, 
     Send, 
@@ -19,11 +23,18 @@ import {
     Time, 
     Day 
 } from 'react-native-gifted-chat';
-import { getMessageChat, seeMessage, sendMessage } from '../services/api';
-import { withNavigation } from '@react-navigation/compat';
+import { getConversation, getMessageChat, seeMessage, sendMessage } from '../services/api';
+import { withNavigation } from 'react-navigation';
+import { handleException } from '@codificar/use-log-errors'; 
+import { REFRESH_INTERVAL } from '../utils/constants';
+
 import WebSocketServer from "../services/socket";
-import strings from '../lang/strings';
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import strings from '../lang/strings';
+
+import 'dayjs/locale/en';
+import 'dayjs/locale/pt-br';
+import 'dayjs/locale/es';
 
 const send = require('react-native-chat/src/img/send.png');
 var color = '#FBFBFB';
@@ -45,60 +56,192 @@ class RideChatScreen extends Component {
             lastIdMessage: '',
             user_ledger_id: 0,
             ledger: 0,
-            sound: "",
+            audio: paramRoute.audio,
+            playSound: null,
+            playSoundError: true,
             url: paramRoute.url,
             id: paramRoute.id,
             userName: paramRoute.userName,
             userAvatar: paramRoute.userAvatar,
             impersonate: paramRoute.impersonate,
+            refreshInterval: paramRoute.refreshInterval,
             token: paramRoute.token,
             conversation_id: paramRoute.conversation_id,
-            is_customer_chat: paramRoute.is_customer_chat,
+            isCustomerChat: paramRoute.isCustomerChat,
             color: paramRoute.color,
-            contNewMensag: 0,
-            is_refreshing: false
+            contNewMessage: 0,
+            is_refreshing: false,
+            intervalConversation: null,
+            baseUrl: paramRoute.basUrl || '',
+            projectName: paramRoute.projectName || '',
+            appType: paramRoute.appType || '',
+            refreshInterval: paramRoute.refreshInterval || REFRESH_INTERVAL,
+            socket_url: paramRoute.socket_url || null,
         }
 
         color = paramRoute.color;
 
-        this.socket = WebSocketServer.connect(paramRoute.socket_url);
+        this.connectSocket();
 
-        this.willBlur = this.props.navigation.addListener("blur", () => {
-            this.unsubscribeSocket();
-            this.unsubscribeSocketNewConversation();
+        this.willBlur = this.props.navigation.addListener("willBlur", async () => {
+            await this.unsubscribeSocket();
+            await this.unsubscribeSocketNewConversation();
+            this.clearInterval();
         })
 
-        this.willFocus = this.props.navigation.addListener("focus", async () => {
+        this.willFocus = this.props.navigation.addListener("willFocus", async () => {
+            await this.connectSocket();
             await this.getConversation();
         });
-        
     }
 
-    componentDidMount() {
+    async connectSocket() {
+        try {
+            if(WebSocketServer.socket !== undefined && WebSocketServer.socket != null)
+                return;
+            if (!WebSocketServer.isConnected) {
+                WebSocketServer.socket = await WebSocketServer.connect(this.state.socket_url);
+                await this.subscribeSocket();
+            }
+        } catch (error) {
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'LibChat.RideChatScreen.connectSocket(): ',
+                error,
+            });
+        }
+    }
+
+    async componentDidMount() {
         this.backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
+            this.unsubscribeSocket();
+            this.unsubscribeSocketNewConversation();
             this.props.navigation.goBack();
             return true;
         });
 
-        const timer = setTimeout(() => {
-            this.subscribeSocketNewConversation(this.state.requestId)
-        }, 1002);
-        return () => clearTimeout(timer);
+        this.setSound();
+        await this.connectSocket();
+        this.initIntervalGetConversation();
+        this.initiIntervalCallApiConversation();
 
+        return () => {
+            this.clearInterval()
+        };
+    }
 
+    initIntervalGetConversation() {
+        if (this.state.refreshInterval) {
+            this.refreshInterval = setInterval(() => {
+                if (!WebSocketServer.isConnected) {
+                    this.getConversation();
+                }
+            }, this.state.refreshInterval);
+        }
+    }
+    initiIntervalCallApiConversation() {
+        if(!this.state.conversation_id || this.state.conversation_id == 0) {
+            this.intervalConversation = setInterval(async () => {
+                await this.callApiConversation();
+            }, 5000);
+
+        }
+    }
+
+    setSound() {
+        const filenameOrFile = this.state.audio ? this.state.audio : "beep.wav";
+        const basePath = this.state.audio ? null : Sound.MAIN_BUNDLE;
+        try {
+            const sound = new Sound(filenameOrFile, basePath, (error) => {
+                if (error) {
+                    console.log('failed to load the sound', error);
+                    return;
+                }
+            });
+    
+            if (sound) {
+                this.setState({
+                    playSound: sound,
+                    playSoundError: false
+                });
+            }
+        } catch (error) {
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'LibChat.RideChatScreen.setSound(): ',
+                error,
+            });
+        }
     }
 
     componentWillUnmount() {
         try {
-          this.backHandler.remove();
+            if (this.state.refreshInterval) {
+                clearInterval(this.refreshInterval);
+            }
+
+            this.unsubscribeSocket();
+            this.unsubscribeSocketNewConversation();
+            this.clearInterval();
+            this.backHandler.remove();
         } catch (error) {
-          console.log('this.componentWillUnmount Error:', error);
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'LibChat.RideChatScreen.componentWillUnmount()',
+                error,
+            });
         }
-    
-      }
+    }
+
+    async callApiConversation() {
+        try {
+            const response = await getConversation(
+                this.state.url,
+                this.state.id,
+                this.state.token,
+                this.state.requestId
+            );
+            const { data } = response;
+            
+            if(data && data.conversations
+                && data.conversations.length > 0
+                && data.conversations[0].id
+                && (!this.state.conversation_id || this.state.conversation_id == 0)
+            ) {
+                this.setState({ conversation_id: data.conversations[0].id });
+                this.getConversation();
+                this.clearInterval();
+            }
+        } catch (error) {
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'LibChat.RideChatScreen.callApiConversation:',
+                error,
+            });
+        }
+    }
+
+    clearInterval() {
+        clearInterval(this.state.intervalConversation);
+        clearInterval(this.intervalConversation);
+        clearInterval(this.refreshInterval);
+        this.setState({
+            intervalConversation: null
+        });
+    }
 
     async getConversation(refresh = false) {
+        if(refresh) {
         this.setState({ isLoading: true, is_refreshing: true })
+        }
         
         if (this.state.conversation_id) {
             try {
@@ -109,11 +252,10 @@ class RideChatScreen extends Component {
                     this.state.conversation_id
                 );
 
-                console.log('response chat messages: ', response)
                 let responseJson = response.data
 
                 if (!refresh) {
-                    this.unsubscribeSocketNewConversation()
+                    this.unsubscribeSocketNewConversation();
                     this.subscribeSocket();//subscribe socket new conversation
                 }
 
@@ -126,28 +268,73 @@ class RideChatScreen extends Component {
                     if (formattedArrayMessages.length > 0) {
                         this.setState({ lastIdMessage: formattedArrayMessages[formattedArrayMessages.length - 1].id })
                         let finalArrayMessages = []
-                        for (let i = 0; i < formattedArrayMessages.length; i++) {
-                            finalArrayMessages.unshift({
-                                _id: formattedArrayMessages[i].id,
-                                createdAt: formattedArrayMessages[i].created_at,
-                                text: formattedArrayMessages[i].message,
-                                user: { _id: formattedArrayMessages[i].user_id }
-                            })
-                        }
+                        
+                        formattedArrayMessages.map(message => {
+                            if(message.response_quick_reply) {
+                                let quickReply = JSON.parse(message.response_quick_reply);
+                                if((!!message.response_quick_reply && quickReply.answered == null)){
+                                    finalArrayMessages.unshift({
+                                        _id: message.id,
+                                        createdAt: message.created_at,
+                                        text: message.message,
+                                        user: { 
+                                            _id: message.user_id
+                                        },
+                                        image: message.picture ? this.state.url + '/uploads/' + message.picture : null,
+                                        quickReplies: {
+                                            type: 'radio', // or 'checkbox',
+                                            keepIt: true,
+                                            values: quickReply.values
+                                        }
+                                    });
+                                } else {
+                                    finalArrayMessages.unshift({
+                                        _id: message.id,
+                                        createdAt: message.created_at,
+                                        text: message.message,
+                                        user: { 
+                                            _id: message.user_id
+                                        },
+                                        image: message.picture ? this.state.url + '/uploads/' + message.picture : null                        
+                                    });
+                                }
+                            } else {
+                                finalArrayMessages.unshift({
+                                    _id: message.id,
+                                    createdAt: message.created_at,
+                                    text: message.message,
+                                    user: { 
+                                        _id: message.user_id
+                                    },
+                                    image: message.picture ? this.state.url + '/uploads/' + message.picture : null                        
+                                });
+                            }
+                        });
                         this.setState({ messages: finalArrayMessages })
                     }
+
+                    if(refresh) {
                     this.setState({ isLoading: false, is_refreshing: false })
+                    }
 
                     if (formattedArrayMessages[formattedArrayMessages.length - 1].is_seen == 0) {
                         this.seeMessage()
                     }
 
                 } else {
+                    if(refresh) {
                     this.setState({ isLoading: false, is_refreshing: false  })
+                }
                 }
             } catch (error) {
                 this.setState({ isLoading: false, is_refreshing: false  });
-                console.log(error);
+                handleException({
+                    baseUrl: this.state.baseUrl,
+                    projectName: this.state.projectName,
+                    appType: this.state.appType,
+                    errorInfo: 'LibChat.RideChatScreen.getConversation()',
+                    error,
+                });
             }
             
         } else {
@@ -160,7 +347,24 @@ class RideChatScreen extends Component {
      * Play the sound request
      */
     playSoundRequest() {
-        Vibration.vibrate();
+        try {
+            Vibration.vibrate();
+            Sound.setCategory("Playback");
+        
+            if (!this.state.playSoundError) {
+                this.state.playSound.setVolume(1);
+                this.state.playSound.play();
+            }    
+        } catch (error) {
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'LibChat.RideChat.playSoundRequest:',
+                error,
+            });
+        }
+
     }
 
     seeMessage() {
@@ -173,14 +377,19 @@ class RideChatScreen extends Component {
             )
                 .then(response => {
                     let responseJson = response.data;
-                    console.log('responseJson: ', responseJson);
                     if (responseJson.success) {
 
                     } else {
                         this.setState({ isLoading: false });
                     }
                 }).catch(error => {
-                    console.log(error);
+                    handleException({
+                        baseUrl: this.state.baseUrl,
+                        projectName: this.state.projectName,
+                        appType: this.state.appType,
+                        errorInfo: 'LibChat.RideChatScreen.seeMessage()',
+                        error,
+                    });
                 })
         }
     }
@@ -189,75 +398,116 @@ class RideChatScreen extends Component {
         console.log('subscribeSocketNewConversation:', id_request)
         try {
             if (this.props.conversation_id == 0) {
-                constants.socket.emit("subscribe", { channel: "request." + id_request })
-                    .on("newConversation", (channel, data) => {
-                        console.log('Evento socket newConversation disparado! ', channel, data)
-                        this.setState({
-                            conversation_id: data.conversation_id
-                        })
-                        this.playSoundRequest();
-                        this.getConversation();
-                    })
+                if(WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
+                    WebSocketServer.socket.emit("subscribe", { channel: "request." + id_request })
+                        .on("newConversation", (channel, data) => {
+                            console.log('Evento socket newConversation disparado! ', channel, data)
+                            this.setState({
+                                conversation_id: data.conversation_id
+                            })
+                            //this.playSoundRequest();
+                            this.getConversation();
+                        });
+                }
             }
         } catch (error) {
-            console.log('Erro subscribeSocketNewConversation:', error)
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: `LibChat.RideChatScreen.subscribeSocketNewConversation(${id_request})`,
+                error,
+            });
         }
     }
     
-    subscribeSocket() {
-        console.log('this.state.conversationId', this.state.conversation_id)
-
-        this.socket
-            .emit("subscribe", { channel: "conversation." + this.state.conversation_id })
-            .on("newMessage", (channel, data) => {
-
-                console.log('Evento socket newMessage disparado! ', channel, data)
-
-                let newMessage = {
-                    _id: data.message.id,
-                    createdAt: data.message.created_at,
-                    text: data.message.message,
-                    sent: true,
-                    received: false,
-                    user: { _id: data.message.user_id }
-                }
-                console.log('newMessage: ', newMessage);
-
-                this.setState(state => {
-                    if (
-                        newMessage._id !==
-                        state.messages[state.messages.length - 1]._id &&
-                        data.message.user_id !== this.state.userLedgeId
-                    ) {
-                        return {
-                            messages: GiftedChat.append(state.messages, newMessage),
-                        };
-                    }
-                });
-
-                this.setState({ lastIdMessage: data.message.id });
-                if (data.message.is_seen == 0 && data.message.user_id !== this.props.ledger) {
-                    this.playSoundRequest();
-                    this.seeMessage();
-                }
-            })
+    async subscribeSocket() {
+        try {
+            if(WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
+                WebSocketServer.socket
+                    .emit("subscribe", { channel: "conversation." + this.state.conversation_id })
+                    .on("newMessage", (channel, data) => {
+    
+                        let newMessage = {
+                            _id: data.message.id,
+                            createdAt: data.message.created_at,
+                            text: data.message.message,
+                            sent: true,
+                            received: false,
+                            user: { 
+                                _id: data.message.user_id
+                            }
+                        }
+                        
+                        const isAdminOrCorp = data.message.admin_id && data.message.admin_id !== this.state.userLedgeId;
+                        const isMessageAlert = data.message.user_id && this.state.userLedgeId && 
+                            parseInt(data.message.user_id) !== parseInt(this.state.userLedgeId);
+                        const isNewMessage = this.state.messages && 
+                            !this.state.messages.some((message) => message._id === newMessage._id) && 
+                            ( isMessageAlert || isAdminOrCorp);
+    
+                        this.setState(state => {
+                            if (isNewMessage) {
+                                return {
+                                    messages: GiftedChat.append(state.messages, newMessage),
+                                };
+                            }
+                        });
+    
+                        this.setState({ lastIdMessage: data.message.id });
+                        if (data.message.is_seen == 0 && data.message.user_id !== this.props.ledger) {
+                            this.seeMessage();
+                        }
+                    });
+            }
+        }  catch (error) {
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: `LibChat.RideChatScreen.subscribeSocket(${this.state.conversation_id})`,
+                error,
+            });
+        }
     }
 
-    unsubscribeSocket() {
-        if (this.socket != null) {
+    async unsubscribeSocket() {
+        if (WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
             if (this.state.conversation_id) {
-                this.socket.removeAllListeners("newConversation")
-                this.socket.removeAllListeners("newMessage")
-                this.socket.removeAllListeners("readMessage")
-                this.socket.emit("unsubscribe", {
-                    channel: "conversation." + this.state.conversation_id
-                })
+                try {
+                    WebSocketServer.socket.removeAllListeners("newConversation")
+                    WebSocketServer.socket.removeAllListeners("newMessage")
+                    WebSocketServer.socket.removeAllListeners("readMessage")
+                    WebSocketServer.socket.emit("unsubscribe", {
+                        channel: "conversation." + this.state.conversation_id
+                    })
+                } catch (error) {
+                    handleException({
+                        baseUrl: this.state.baseUrl,
+                        projectName: this.state.projectName,
+                        appType: this.state.appType,
+                        errorInfo: 'LibChat.RideChatScreen.unsubscribeSocket()',
+                        error,
+                    });
+                }
             }
         }
     }
 
-    unsubscribeSocketNewConversation() {
-        this.socket.removeAllListeners("newConversation");
+    async unsubscribeSocketNewConversation() {
+        try {
+            if(WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
+                WebSocketServer.socket.removeAllListeners("newConversation");
+            }
+        }  catch (error) {
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'LibChat.RideChatScreen.unsubscribeSocketNewConversation()',
+                error,
+            });
+        }
     }
 
     /**
@@ -266,10 +516,14 @@ class RideChatScreen extends Component {
      */
     async onSend(messages = []) {
         try {
-            console.log('onSend messages: ', messages)
-            let type = 'text'
-            let formatted = messages[0].text
-            console.log('response send message: ', this.state.receiveID)
+            
+            let type = 'text';
+            let formatted = messages[0].text;
+            let conversationId = 0;
+            if(this.state.conversation_id) {
+                conversationId = this.state.conversation_id;
+            }
+            
             const response = await sendMessage(
                 this.state.url,
                 this.state.id,
@@ -277,12 +531,12 @@ class RideChatScreen extends Component {
                 this.state.requestId,
                 formatted,
                 this.state.receiveID,
-                this.state.is_customer_chat,
-                type
-            )
+                type,
+                conversationId,
+                this.state.isCustomerChat
+            );
 
-            var responseJson = response.data
-            console.log('response send message: ', responseJson)
+            var responseJson = response.data;
 
             if (responseJson.success) {
                 if (responseJson.conversation_id) {
@@ -302,7 +556,13 @@ class RideChatScreen extends Component {
                 }));
             }
         } catch (error) {
-            console.log("error send:", error)
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'LibChat.RideChatScreen.onSend()',
+                error,
+            });
         }
     }
 
@@ -385,7 +645,6 @@ class RideChatScreen extends Component {
         )
     }
 
-
     /**
      * Mount RefreshControl
      */
@@ -397,46 +656,62 @@ class RideChatScreen extends Component {
         />
     }
 
-    render() {
+    getBehavior() {
+        if (!this.state.impersonate && Platform.OS !== 'ios') {
+            return 'padding';
+        }
 
+        return null;
+    }
+
+    render() {
+        const isConversation = this.state.conversation_id && this.state.conversation_id != 0;
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.headerView}>
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      style={styles.backButton}
-                      onPress={() => this.props.navigation.goBack()}
-                    >
-                      <MaterialIcons name="keyboard-arrow-left" color={this.state.color} size={35} />
-                    </TouchableOpacity>
-                    { !(this.state.impersonate && this.state.is_customer_chat) && (
-                        <Image
-                            style={styles.avatarImg}
-                            source={{ uri: this.state.userAvatar }}
-                        />
-                    )}
-                    <Text style={styles.userName}>
-                        {(this.state.impersonate && this.state.is_customer_chat) ? 'Chat com usuário' : this.state.userName}
-                    </Text>
-                </View>
-                <GiftedChat
-                    messages={this.state.messages}
-                    placeholder={strings.send_message}
-                    locale='pt'
-                    dateFormat='L'
-                    onSend={messages => this.onSend(messages)}
-                    user={{ _id: this.state.userLedgeId }}
-                    renderSend={this.renderSend}
-                    renderDay={this.renderDay}
-                    renderBubble={this.renderBubble}
-                    renderMessageText={this.renderMessageText}
-                    renderTime={this.renderTime}
-                    textInputProps={{ keyboardType: this.state.isMessageValue ? 'numeric' : 'default' }}
-                    listViewProps={{
-                        refreshControl: this.renderRefreshControl()
-                    }}
-                />
-            </SafeAreaView>
+            <KeyboardAvoidingView behavior={this.getBehavior()} style={styles.container}>
+                <SafeAreaView style={styles.safeArea}>
+                    <View style={styles.headerView}>
+                        <TouchableOpacity
+                        activeOpacity={0.7}
+                        style={styles.backButton}
+                        onPress={() => this.props.navigation.goBack()}
+                        >
+                        <MaterialIcons name="keyboard-arrow-left" color={this.state.color} size={35} />
+                        </TouchableOpacity>
+                    { !(this.state.impersonate && this.state.isCustomerChat) && (
+                            <Image
+                                style={styles.avatarImg}
+                                source={{ uri: this.state.userAvatar }}
+                            />
+                        )}
+                        <Text style={styles.userName}>
+                        {(this.state.impersonate && this.state.isCustomerChat) ? 'Chat com usuário' : this.state.userName}
+                        </Text>
+                    </View>
+                    { !isConversation 
+                        ? ( <View style={styles.containerNoConversation}>
+                                <Text style={styles.textNoConversation}> Chat ainda não iniciado. Envie uma mensagem para iniciar. </Text>
+                            </View>)
+                        : null
+                    } 
+                    <GiftedChat
+                        messages={this.state.messages}
+                        placeholder={strings.send_message}
+                    locale={strings.locale}
+                        dateFormat='L'
+                        onSend={messages => this.onSend(messages)}
+                        user={{ _id: this.state.userLedgeId }}
+                        renderSend={this.renderSend}
+                        renderDay={this.renderDay}
+                        renderBubble={this.renderBubble}
+                        renderMessageText={this.renderMessageText}
+                        renderTime={this.renderTime}
+                        textInputProps={{ keyboardType: this.state.isMessageValue ? 'numeric' : 'default' }}
+                        listViewProps={{
+                            refreshControl: this.renderRefreshControl()
+                        }}
+                    />
+                </SafeAreaView>
+            </KeyboardAvoidingView>
         )
     }
 }
@@ -444,6 +719,10 @@ class RideChatScreen extends Component {
 const styles = StyleSheet.create({
     container: {
         flex: 1
+    },
+    safeArea: {
+        flex: 1,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
     },
     messageText: {
         color: '#211F1F'
@@ -510,6 +789,19 @@ const styles = StyleSheet.create({
         marginTop: 10,
         elevation: 5,
     },
+    containerNoConversation: {
+        margin: 25, 
+        padding: 5, 
+        borderRadius: 5, 
+        backgroundColor: '#687a95', 
+        display: 'flex', 
+        justifyContent: 'center' 
+    },
+    textNoConversation: {
+        fontSize: 18, 
+        textAlign: 'center', 
+        color: '#FFF'
+    }
 });
 
 export default withNavigation(RideChatScreen);
