@@ -29,12 +29,12 @@ class HelpButton extends Component {
                 <TouchableOpacity
                     style={styles.chatBtn}
                     onPress={() => this.props.navigation.navigate('HelpChatScreen', {
-                        url: this.props.url,
-                        socket_url: this.props.socket_url,
-                        id: this.props.id,
-                        token: this.props.token,
-                        request_id: this.props.request_id,
-                        audio: this.props.audio,
+                            url: this.props.url,
+                            socket_url: this.props.socket_url,
+                            id: this.props.id,
+                            token: this.props.token,
+                            request_id: this.props.request_id,
+                            audio: this.props.audio,
                     })}
                 >
                     <Image 
