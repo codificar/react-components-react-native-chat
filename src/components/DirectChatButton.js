@@ -21,7 +21,7 @@ class DirectChatButton extends Component {
 
         this.state = {
             receiveID: 0,
-            contNewMensag: 0
+            countNewMessage: 0
         }
     }
 
