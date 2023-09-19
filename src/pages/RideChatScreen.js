@@ -6,9 +6,12 @@ import {
     Vibration,
     StyleSheet,
     Image,
+    KeyboardAvoidingView,
+    Platform,
     RefreshControl,
     Text,
-    SafeAreaView
+    SafeAreaView,
+    StatusBar
 } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import Sound from "react-native-sound";
@@ -61,11 +64,12 @@ class RideChatScreen extends Component {
             userName: paramRoute.userName,
             userAvatar: paramRoute.userAvatar,
             impersonate: paramRoute.impersonate,
+            refreshInterval: paramRoute.refreshInterval,
             token: paramRoute.token,
             conversation_id: paramRoute.conversation_id,
             isCustomerChat: paramRoute.isCustomerChat,
             color: paramRoute.color,
-            contNewMensag: 0,
+            contNewMessage: 0,
             is_refreshing: false,
             intervalConversation: null,
             baseUrl: paramRoute.basUrl || '',
@@ -89,8 +93,6 @@ class RideChatScreen extends Component {
             await this.connectSocket();
             await this.getConversation();
         });
-        
-        
     }
 
     async connectSocket() {
@@ -124,7 +126,7 @@ class RideChatScreen extends Component {
         await this.connectSocket();
         this.initIntervalGetConversation();
         this.initiIntervalCallApiConversation();
-        
+
         return () => {
             this.clearInterval()
         };
@@ -178,6 +180,10 @@ class RideChatScreen extends Component {
 
     componentWillUnmount() {
         try {
+            if (this.state.refreshInterval) {
+                clearInterval(this.refreshInterval);
+            }
+
             this.unsubscribeSocket();
             this.unsubscribeSocketNewConversation();
             this.clearInterval();
@@ -191,7 +197,7 @@ class RideChatScreen extends Component {
                 error,
             });
         }
-      }
+    }
 
     async callApiConversation() {
         try {
@@ -234,7 +240,7 @@ class RideChatScreen extends Component {
 
     async getConversation(refresh = false) {
         if(refresh) {
-            this.setState({ isLoading: true, is_refreshing: true })
+        this.setState({ isLoading: true, is_refreshing: true })
         }
         
         if (this.state.conversation_id) {
@@ -308,7 +314,7 @@ class RideChatScreen extends Component {
                     }
 
                     if(refresh) {
-                        this.setState({ isLoading: false, is_refreshing: false })
+                    this.setState({ isLoading: false, is_refreshing: false })
                     }
 
                     if (formattedArrayMessages[formattedArrayMessages.length - 1].is_seen == 0) {
@@ -317,8 +323,8 @@ class RideChatScreen extends Component {
 
                 } else {
                     if(refresh) {
-                        this.setState({ isLoading: false, is_refreshing: false })
-                    }
+                    this.setState({ isLoading: false, is_refreshing: false  })
+                }
                 }
             } catch (error) {
                 this.setState({ isLoading: false, is_refreshing: false  });
@@ -650,53 +656,62 @@ class RideChatScreen extends Component {
         />
     }
 
+    getBehavior() {
+        if (!this.state.impersonate && Platform.OS !== 'ios') {
+            return 'padding';
+        }
+
+        return null;
+    }
+
     render() {
         const isConversation = this.state.conversation_id && this.state.conversation_id != 0;
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.headerView}>
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      style={styles.backButton}
-                      onPress={() => this.props.navigation.goBack()}
-                    >
-                      <MaterialIcons name="keyboard-arrow-left" color={this.state.color} size={35} />
-                    </TouchableOpacity>
+            <KeyboardAvoidingView behavior={this.getBehavior()} style={styles.container}>
+                <SafeAreaView style={styles.safeArea}>
+                    <View style={styles.headerView}>
+                        <TouchableOpacity
+                        activeOpacity={0.7}
+                        style={styles.backButton}
+                        onPress={() => this.props.navigation.goBack()}
+                        >
+                        <MaterialIcons name="keyboard-arrow-left" color={this.state.color} size={35} />
+                        </TouchableOpacity>
                     { !(this.state.impersonate && this.state.isCustomerChat) && (
-                        <Image
-                            style={styles.avatarImg}
-                            source={{ uri: this.state.userAvatar }}
-                        />
-                    )}
-                    <Text style={styles.userName}>
+                            <Image
+                                style={styles.avatarImg}
+                                source={{ uri: this.state.userAvatar }}
+                            />
+                        )}
+                        <Text style={styles.userName}>
                         {(this.state.impersonate && this.state.isCustomerChat) ? 'Chat com usuário' : this.state.userName}
-                    </Text>
-                </View>
-                { !isConversation 
-                    ? ( <View style={styles.containerNoConversation}>
-                            <Text style={styles.textNoConversation}> Chat ainda não iniciado. Envie uma mensagem para iniciar. </Text>
-                        </View>)
-                    : null
-                }                
-                <GiftedChat
-                    messages={this.state.messages}
-                    placeholder={strings.send_message}
+                        </Text>
+                    </View>
+                    { !isConversation 
+                        ? ( <View style={styles.containerNoConversation}>
+                                <Text style={styles.textNoConversation}> Chat ainda não iniciado. Envie uma mensagem para iniciar. </Text>
+                            </View>)
+                        : null
+                    } 
+                    <GiftedChat
+                        messages={this.state.messages}
+                        placeholder={strings.send_message}
                     locale={strings.locale}
-                    dateFormat='L'
-                    onSend={messages => this.onSend(messages)}
-                    user={{ _id: this.state.userLedgeId }}
-                    renderUsernameOnMessage={false}
-                    renderSend={this.renderSend}
-                    renderDay={this.renderDay}
-                    renderBubble={this.renderBubble}
-                    renderMessageText={this.renderMessageText}
-                    renderTime={this.renderTime}
-                    textInputProps={{ keyboardType: this.state.isMessageValue ? 'numeric' : 'default' }}
-                    listViewProps={{
-                        refreshControl: this.renderRefreshControl()
-                    }}
-                />
-            </SafeAreaView>
+                        dateFormat='L'
+                        onSend={messages => this.onSend(messages)}
+                        user={{ _id: this.state.userLedgeId }}
+                        renderSend={this.renderSend}
+                        renderDay={this.renderDay}
+                        renderBubble={this.renderBubble}
+                        renderMessageText={this.renderMessageText}
+                        renderTime={this.renderTime}
+                        textInputProps={{ keyboardType: this.state.isMessageValue ? 'numeric' : 'default' }}
+                        listViewProps={{
+                            refreshControl: this.renderRefreshControl()
+                        }}
+                    />
+                </SafeAreaView>
+            </KeyboardAvoidingView>
         )
     }
 }
@@ -704,6 +719,10 @@ class RideChatScreen extends Component {
 const styles = StyleSheet.create({
     container: {
         flex: 1
+    },
+    safeArea: {
+        flex: 1,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
     },
     messageText: {
         color: '#211F1F'
