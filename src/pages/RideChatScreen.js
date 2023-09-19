@@ -24,11 +24,17 @@ import {
     Day 
 } from 'react-native-gifted-chat';
 import { getConversation, getMessageChat, seeMessage, sendMessage } from '../services/api';
-import { withNavigation } from '@react-navigation/compat';
-import WebSocketServer from "../services/socket";
-import strings from '../lang/strings';
-import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import { withNavigation } from 'react-navigation';
 import { handleException } from '@codificar/use-log-errors'; 
+import { REFRESH_INTERVAL } from '../utils/constants';
+
+import WebSocketServer from "../services/socket";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import strings from '../lang/strings';
+
+import 'dayjs/locale/en';
+import 'dayjs/locale/pt-br';
+import 'dayjs/locale/es';
 
 const send = require('react-native-chat/src/img/send.png');
 var color = '#FBFBFB';
@@ -61,7 +67,7 @@ class RideChatScreen extends Component {
             refreshInterval: paramRoute.refreshInterval,
             token: paramRoute.token,
             conversation_id: paramRoute.conversation_id,
-            is_customer_chat: paramRoute.is_customer_chat,
+            isCustomerChat: paramRoute.isCustomerChat,
             color: paramRoute.color,
             contNewMessage: 0,
             is_refreshing: false,
@@ -69,19 +75,21 @@ class RideChatScreen extends Component {
             baseUrl: paramRoute.basUrl || '',
             projectName: paramRoute.projectName || '',
             appType: paramRoute.appType || '',
+            refreshInterval: paramRoute.refreshInterval || REFRESH_INTERVAL,
+            socket_url: paramRoute.socket_url || null,
         }
 
         color = paramRoute.color;
 
         this.connectSocket();
 
-        this.willBlur = this.props.navigation.addListener("blur", async () => {
+        this.willBlur = this.props.navigation.addListener("willBlur", async () => {
             await this.unsubscribeSocket();
             await this.unsubscribeSocketNewConversation();
-            this.clearIntervalConverstaion();
+            this.clearInterval();
         })
 
-        this.willFocus = this.props.navigation.addListener("focus", async () => {
+        this.willFocus = this.props.navigation.addListener("willFocus", async () => {
             await this.connectSocket();
             await this.getConversation();
         });
@@ -92,20 +100,21 @@ class RideChatScreen extends Component {
             if(WebSocketServer.socket !== undefined && WebSocketServer.socket != null)
                 return;
             if (!WebSocketServer.isConnected) {
-                WebSocketServer.socket = WebSocketServer.connect(this.props.socket_url);
+                WebSocketServer.socket = await WebSocketServer.connect(this.state.socket_url);
+                await this.subscribeSocket();
             }
         } catch (error) {
             handleException({
                 baseUrl: this.state.baseUrl,
                 projectName: this.state.projectName,
                 appType: this.state.appType,
-                errorInfo: 'connectSocket - RideChatScreen - connectSocket(): ',
+                errorInfo: 'LibChat.RideChatScreen.connectSocket(): ',
                 error,
             });
         }
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         this.backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
             this.unsubscribeSocket();
             this.unsubscribeSocketNewConversation();
@@ -114,42 +123,36 @@ class RideChatScreen extends Component {
         });
 
         this.setSound();
+        await this.connectSocket();
+        this.initIntervalGetConversation();
+        this.initiIntervalCallApiConversation();
 
+        return () => {
+            this.clearInterval()
+        };
+    }
+
+    initIntervalGetConversation() {
         if (this.state.refreshInterval) {
             this.refreshInterval = setInterval(() => {
-                this.getConversation(true);
+                if (!WebSocketServer.isConnected) {
+                    this.getConversation();
+                }
             }, this.state.refreshInterval);
         }
-        
-        const timer = setTimeout(async () => {
-            await this.connectSocket();
-            await this.subscribeSocket();
-            this.subscribeSocketNewConversation(this.state.requestId)
-        }, 1002);
-
-
-        let intervalConversation = null;
+    }
+    initiIntervalCallApiConversation() {
         if(!this.state.conversation_id || this.state.conversation_id == 0) {
-            intervalConversation = setInterval(async () => {
+            this.intervalConversation = setInterval(async () => {
                 await this.callApiConversation();
             }, 5000);
 
         }
-
-        this.setState({
-            intervalConversation
-        });
-        
-        return () => {
-            clearTimeout(timer);
-            clearInterval(intervalConversation);
-        };
     }
 
-    setSound(filenameOrFile, basePath) {
+    setSound() {
         const filenameOrFile = this.state.audio ? this.state.audio : "beep.wav";
         const basePath = this.state.audio ? null : Sound.MAIN_BUNDLE;
-
         try {
             const sound = new Sound(filenameOrFile, basePath, (error) => {
                 if (error) {
@@ -169,7 +172,7 @@ class RideChatScreen extends Component {
                 baseUrl: this.state.baseUrl,
                 projectName: this.state.projectName,
                 appType: this.state.appType,
-                errorInfo: 'configSound - RideChatScreen - setSound(): ',
+                errorInfo: 'LibChat.RideChatScreen.setSound(): ',
                 error,
             });
         }
@@ -183,10 +186,16 @@ class RideChatScreen extends Component {
 
             this.unsubscribeSocket();
             this.unsubscribeSocketNewConversation();
+            this.clearInterval();
             this.backHandler.remove();
-            this.clearIntervalConverstaion();
         } catch (error) {
-            console.log('this.componentWillUnmount Error:', error);
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'LibChat.RideChatScreen.componentWillUnmount()',
+                error,
+            });
         }
     }
 
@@ -207,28 +216,32 @@ class RideChatScreen extends Component {
             ) {
                 this.setState({ conversation_id: data.conversations[0].id });
                 this.getConversation();
-                this.clearIntervalConverstaion();
+                this.clearInterval();
             }
         } catch (error) {
             handleException({
                 baseUrl: this.state.baseUrl,
                 projectName: this.state.projectName,
                 appType: this.state.appType,
-                errorInfo: 'Chatlib - RideChatScreen - callApiConversation:',
+                errorInfo: 'LibChat.RideChatScreen.callApiConversation:',
                 error,
             });
         }
     }
 
-    clearIntervalConverstaion() {
+    clearInterval() {
         clearInterval(this.state.intervalConversation);
+        clearInterval(this.intervalConversation);
+        clearInterval(this.refreshInterval);
         this.setState({
             intervalConversation: null
         });
     }
 
     async getConversation(refresh = false) {
+        if(refresh) {
         this.setState({ isLoading: true, is_refreshing: true })
+        }
         
         if (this.state.conversation_id) {
             try {
@@ -239,7 +252,6 @@ class RideChatScreen extends Component {
                     this.state.conversation_id
                 );
 
-                console.log('response chat messages: ', response)
                 let responseJson = response.data
 
                 if (!refresh) {
@@ -300,18 +312,29 @@ class RideChatScreen extends Component {
                         });
                         this.setState({ messages: finalArrayMessages })
                     }
+
+                    if(refresh) {
                     this.setState({ isLoading: false, is_refreshing: false })
+                    }
 
                     if (formattedArrayMessages[formattedArrayMessages.length - 1].is_seen == 0) {
                         this.seeMessage()
                     }
 
                 } else {
+                    if(refresh) {
                     this.setState({ isLoading: false, is_refreshing: false  })
+                }
                 }
             } catch (error) {
                 this.setState({ isLoading: false, is_refreshing: false  });
-                console.log(error);
+                handleException({
+                    baseUrl: this.state.baseUrl,
+                    projectName: this.state.projectName,
+                    appType: this.state.appType,
+                    errorInfo: 'LibChat.RideChatScreen.getConversation()',
+                    error,
+                });
             }
             
         } else {
@@ -337,7 +360,7 @@ class RideChatScreen extends Component {
                 baseUrl: this.state.baseUrl,
                 projectName: this.state.projectName,
                 appType: this.state.appType,
-                errorInfo: 'playSound - RideButton - playSoundRequest:',
+                errorInfo: 'LibChat.RideChat.playSoundRequest:',
                 error,
             });
         }
@@ -354,14 +377,19 @@ class RideChatScreen extends Component {
             )
                 .then(response => {
                     let responseJson = response.data;
-                    console.log('responseJson: ', responseJson);
                     if (responseJson.success) {
 
                     } else {
                         this.setState({ isLoading: false });
                     }
                 }).catch(error => {
-                    console.log(error);
+                    handleException({
+                        baseUrl: this.state.baseUrl,
+                        projectName: this.state.projectName,
+                        appType: this.state.appType,
+                        errorInfo: 'LibChat.RideChatScreen.seeMessage()',
+                        error,
+                    });
                 })
         }
     }
@@ -387,14 +415,13 @@ class RideChatScreen extends Component {
                 baseUrl: this.state.baseUrl,
                 projectName: this.state.projectName,
                 appType: this.state.appType,
-                errorInfo: 'connectSocket - RideChatScreen - subscribeSocketNewConversation()',
+                errorInfo: `LibChat.RideChatScreen.subscribeSocketNewConversation(${id_request})`,
                 error,
             });
         }
     }
     
     async subscribeSocket() {
-        console.log('this.state.conversationId', this.state.conversation_id)
         try {
             if(WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
                 WebSocketServer.socket
@@ -438,7 +465,7 @@ class RideChatScreen extends Component {
                 baseUrl: this.state.baseUrl,
                 projectName: this.state.projectName,
                 appType: this.state.appType,
-                errorInfo: 'connectSocket - RideChatScreen - subscribeSocket()',
+                errorInfo: `LibChat.RideChatScreen.subscribeSocket(${this.state.conversation_id})`,
                 error,
             });
         }
@@ -459,7 +486,7 @@ class RideChatScreen extends Component {
                         baseUrl: this.state.baseUrl,
                         projectName: this.state.projectName,
                         appType: this.state.appType,
-                        errorInfo: 'connectSocket - RideChatScreen - unsubscribeSocket()',
+                        errorInfo: 'LibChat.RideChatScreen.unsubscribeSocket()',
                         error,
                     });
                 }
@@ -477,7 +504,7 @@ class RideChatScreen extends Component {
                 baseUrl: this.state.baseUrl,
                 projectName: this.state.projectName,
                 appType: this.state.appType,
-                errorInfo: 'connectSocket - RideChatScreen - unsubscribeSocketNewConversation()',
+                errorInfo: 'LibChat.RideChatScreen.unsubscribeSocketNewConversation()',
                 error,
             });
         }
@@ -504,14 +531,12 @@ class RideChatScreen extends Component {
                 this.state.requestId,
                 formatted,
                 this.state.receiveID,
-                this.state.is_customer_chat,
                 type,
                 conversationId,
-                
-            )
+                this.state.isCustomerChat
+            );
 
             var responseJson = response.data;
-            console.log('response send message: ', responseJson)
 
             if (responseJson.success) {
                 if (responseJson.conversation_id) {
@@ -531,7 +556,13 @@ class RideChatScreen extends Component {
                 }));
             }
         } catch (error) {
-            console.log("error send:", error)
+            handleException({
+                baseUrl: this.state.baseUrl,
+                projectName: this.state.projectName,
+                appType: this.state.appType,
+                errorInfo: 'LibChat.RideChatScreen.onSend()',
+                error,
+            });
         }
     }
 
@@ -646,14 +677,14 @@ class RideChatScreen extends Component {
                         >
                         <MaterialIcons name="keyboard-arrow-left" color={this.state.color} size={35} />
                         </TouchableOpacity>
-                        { !(this.state.impersonate && this.state.is_customer_chat) && (
+                    { !(this.state.impersonate && this.state.isCustomerChat) && (
                             <Image
                                 style={styles.avatarImg}
                                 source={{ uri: this.state.userAvatar }}
                             />
                         )}
                         <Text style={styles.userName}>
-                            {(this.state.impersonate && this.state.is_customer_chat) ? 'Chat com usuário' : this.state.userName}
+                        {(this.state.impersonate && this.state.isCustomerChat) ? 'Chat com usuário' : this.state.userName}
                         </Text>
                     </View>
                     { !isConversation 
@@ -665,7 +696,7 @@ class RideChatScreen extends Component {
                     <GiftedChat
                         messages={this.state.messages}
                         placeholder={strings.send_message}
-                        locale='pt'
+                    locale={strings.locale}
                         dateFormat='L'
                         onSend={messages => this.onSend(messages)}
                         user={{ _id: this.state.userLedgeId }}

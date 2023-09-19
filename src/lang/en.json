@@ -1,4 +1,5 @@
 {
+    "locale": "en",
     "directs": "Conversations",
     "new_direct": "New conversation",
     "send_message": "Send a message",

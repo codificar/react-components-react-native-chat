@@ -13,6 +13,7 @@ import WebSocketServer from "../services/socket";
 import Sound from "react-native-sound";
 import Badger from './Badger';
 import { handleException } from '@codificar/use-log-errors'; 
+import { REFRESH_INTERVAL } from '../utils/constants';
 import { FloatingAction } from "react-native-floating-action";
 
 const icon = require('react-native-chat/src/img/chat.png');
@@ -36,7 +37,8 @@ class RideButton extends Component {
             buttonStyle: this.props.buttonStyle || styles.iconCallUser,
             titleStyle: this.props.titleStyle || styles.title,
             iconStyle: this.props.iconStyle || styles.img,
-            actions: this.props.actions || []
+            actions: this.props.actions || [],
+            isCustomerChat: this.props.isCustomerChat || 0,
         }
 
         this.connectSocket();
@@ -120,53 +122,92 @@ class RideButton extends Component {
             if(WebSocketServer.socket !== undefined && WebSocketServer.socket != null)
                 return;
             if (!WebSocketServer.isConnected) {
-                WebSocketServer.socket = WebSocketServer.connect(this.props.socket_url);
+                WebSocketServer.socket = await WebSocketServer.connect(this.props.socket_url);
+                await this.subscribeSocket();
             }
         } catch (error) {
             handleException({
                 baseUrl: this.props.baseUrl,
                 projectName: this.props.projectName,
                 appType: this.props.appType,
-                errorInfo: 'connectSocket - RideButton - connectSocket(): ',
+                errorInfo: 'LibChat.RideButton.connectSocket(): ',
                 error,
             });
         }
     }
 
-    renderAction(action) {
-        return (
-            <>
-                <View style={{ ...styles.actionButton, backgroundColor: action.color }}>
-                    <Badger contador={ action.name === 'bt_customer' ? this.state.countNewMessageCustomer : this.state.countNewMessage }
-                        position={{
-                            position: 'absolute',
-                            top: -8,
-                            left: 28,
-                            zIndex: 999,
-                            elevation: 6
-                        }}
-                    />
-                    <Image
-                        style={{...styles.img, tintColor: 'white'}}
-                        source={icon}
-                    />
-                </View>
-                <View style={styles.viewTitle}>
-                    <Text style={{ ...styles.title, marginLeft: 10 }}>{action.text}</Text>
-                </View>
-            </>
-        )
+    async componentDidMount() {
+
+        this.setSound();
+        await this.connectSocket();
+        this.initIntervalGetConversation();
+        this.initIntervalCallApiConversation();
+
+        return () => {
+            this.clearInterval();
+        }
+        
+    }
+
+    clearInterval() {
+        clearInterval(this.intervalConversation);
+        clearInterval(this.refreshInterval);
+    }
+    
+    initIntervalGetConversation() {
+        if (this.props.refreshInterval) {
+            this.refreshInterval = setInterval(() => {
+                if (!WebSocketServer.isConnected) {
+                    this.getConversation();
+                }
+            }, this.props.refreshInterval);
+        }
+    }
+    
+    initIntervalCallApiConversation() {
+        if(!this.state.conversation_id || this.state.conversation_id == 0) {
+            this.intervalConversation = setInterval(async () => {
+                await this.callApiConversation();
+            }, 5000);
+
+        }
+    }
+
+
+    setSound() {
+        const filenameOrFile = this.state.audio ? this.state.audio : "beep.wav";
+        const basePath = this.state.audio ? null : Sound.MAIN_BUNDLE;
+        try {
+            const sound = new Sound(filenameOrFile, basePath, (error) => {
+                if (error) {
+                    console.log('failed to load the sound', error);
+                    return;
+                }
+            });
+    
+            if (sound) {
+                this.setState({
+                    playSound: sound,
+                    playSoundError: false
+                });
+            }
+        } catch (error) {
+            handleException({
+                baseUrl: this.props.baseUrl,
+                projectName: this.props.projectName,
+                appType: this.props.appType,
+                errorInfo: 'LibChat.RideButton.setSound(): ',
+                error,
+            });
+        }
     }
 
     subscribeSocketConversation(id) {
-		console.log('subscribeSocketConversation', id)
         try {
             if(WebSocketServer.socket != undefined && WebSocketServer.socket != null) {
                 WebSocketServer.socket
                     .emit("subscribe", { channel: "conversation." + id })
                     .on("newMessage", (channel, data) => {
-        
-                        //this.playSoundRequest();
                         this.setState({
                             countNewMessage: this.state.countNewMessage + 1
                         });
@@ -177,7 +218,7 @@ class RideButton extends Component {
                 baseUrl: this.props.baseUrl,
                 projectName: this.props.projectName,
                 appType: this.props.appType,
-                errorInfo: 'connectSocket - RideButton - subscribeSocketConversation():',
+                errorInfo: `LibChat.RideButton.subscribeSocketConversation(${id}):`,
                 error,
             });
 		}
@@ -202,7 +243,7 @@ class RideButton extends Component {
                 baseUrl: this.props.baseUrl,
                 projectName: this.props.projectName,
                 appType: this.props.appType,
-                errorInfo: 'connectSocket - RideButton - subscribeSocketNewConversation():',
+                errorInfo: 'LibChat.RideButton.subscribeSocketNewConversation():',
                 error,
             });
 		}
@@ -218,7 +259,7 @@ class RideButton extends Component {
                 baseUrl: this.props.baseUrl,
                 projectName: this.props.projectName,
                 appType: this.props.appType,
-                errorInfo: 'connectSocket - RideButton - unsubscribeSocketNewConversation():',
+                errorInfo: 'LibChat.RideButton.unsubscribeSocketNewConversation():',
                 error,
             });
         }
@@ -240,7 +281,7 @@ class RideButton extends Component {
                         baseUrl: this.props.baseUrl,
                         projectName: this.props.projectName,
                         appType: this.props.appType,
-                        errorInfo: 'connectSocket - RideButton - unsubscribeSocket():',
+                        errorInfo: 'LibChat.RideButton.unsubscribeSocket():',
                         error,
                     });
                 }
@@ -266,7 +307,7 @@ class RideButton extends Component {
                 baseUrl: this.props.baseUrl,
                 projectName: this.props.projectName,
                 appType: this.props.appType,
-                errorInfo: 'playSound - RideButton - playSoundRequest():',
+                errorInfo: 'LibChat.RideButton.playSoundRequest():',
                 error,
             });
         }
@@ -287,7 +328,6 @@ class RideButton extends Component {
             
 			this.setState({
                 receiveID: data.user.id,
-                conversation_id: data.id,
                 userName: data.user.name,
                 userAvatar: data.user.image,
                 countNewMessage: data.new_messages || 0,
@@ -296,25 +336,38 @@ class RideButton extends Component {
             this.subscribeSocketConversation(data.id);
 
 		} catch (error) {
-			console.log('Erro getConversation:', error)
+            handleException({
+                baseUrl: this.props.baseUrl,
+                projectName: this.props.projectName,
+                appType: this.props.appType,
+                errorInfo: 'LibChat.RideButton.getConversation(): ',
+                error,
+            });
 		}
     }
 
-    async callApiConversation(is_customer_chat = 0) {
+    async callApiConversation(isCustomerChat = 0) {
         try {
             const response = await getConversation(
                 this.props.url,
                 this.props.id,
                 this.props.token,
                 this.props.request_id,
-                is_customer_chat
+                isCustomerChat
             );
 
             const { data } = response;
 
             return data.conversations[0];
         } catch (error) {
-            console.log('Erro callApiConversation:', error);
+
+            handleException({
+                baseUrl: this.props.baseUrl,
+                projectName: this.props.projectName,
+                appType: this.props.appType,
+                errorInfo: 'LibChat.RideButton.callApiConversation(): ',
+                error,
+            });
 
             return {
                 id: 0
@@ -330,30 +383,30 @@ class RideButton extends Component {
         }
     }
     
-    async navigateTo(is_customer_chat = 0) {
+    async navigateTo(isCustomerChat = 0) {
         let conversationId = this.state.conversation_id;
         let userName = this.state.userName;
         let userAvatar = this.state.userAvatar;
 
         if (conversationId == 0) {
-            const data = await this.callApiConversation(is_customer_chat);
+            const data = await this.callApiConversation(isCustomerChat);
             conversationId = data.id;
+        }
+
+        if(data.user) {
             userName = data.user.name;
             userAvatar = data.user.image;
         }
 
         this.unsubscribeSocket();
         
-        this.props.navigation.navigate('ChatStack', {
-            screen: 'RideChatScreen', 
-            params: {
+        this.props.navigation.navigate('RideChatScreen', {
                 receiveID: this.state.receiveID,
                 conversation_id: conversationId,
                 url: this.props.url,
                 socket_url: this.props.socket_url,
                 id: this.props.id,
                 token: this.props.token,
-                is_customer_chat: is_customer_chat,
                 requestId: this.props.request_id,
                 color: this.props.color,
                 userName: userName,
@@ -363,8 +416,8 @@ class RideButton extends Component {
                 baseUrl: this.props.baseUrl,
                 projectName: this.props.projectName,
                 appType: this.props.appType,
-                refreshInterval: this.props.refreshInterval
-        }})
+            refreshInterval: this.props.refreshInterval || REFRESH_INTERVAL
+        })
     }
 
     render() {
@@ -394,14 +447,14 @@ class RideButton extends Component {
             ) : (
                 <TouchableOpacity
                     style={this.state.buttonStyle}
-                    onPress={() => this.navigateTo(this.state.is_customer_chat)}
+                    onPress={() => this.navigateTo(this.state.isCustomerChat)}
                     activeOpacity={0.6}
                 >
                     { this.state.text.length > 0 && (
                         <Text style={this.state.titleStyle}>{this.state.text}</Text>
                     )}
                     <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-                        <Badger contador={this.state.is_customer_chat ? this.state.countNewMessageCustomer : this.state.countNewMessage}
+                        <Badger contador={this.state.countNewMessage}
                             position={{
                                 position: 'absolute',
                                 top: -10,

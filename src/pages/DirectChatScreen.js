@@ -40,12 +40,12 @@ class DirectChatScreen extends Component {
 
         this.connectSocket();
 
-        this.willBlur = this.props.navigation.addListener("blur", async () => {
-            await this.unsubscribeSocketNewConversation();
+        this.willBlur = this.props.navigation.addListener("willBlur", async () => {
             await this.unsubscribeSocket();
+            await this.unsubscribeSocketNewConversation();
         })
 
-        this.willFocus = this.props.navigation.addListener("focus", async () => {
+        this.willFocus = this.props.navigation.addListener("willFocus", async () => {
             await this.unsubscribeSocketNewConversation();
             await this.unsubscribeSocket();
             await this.getMessages();
