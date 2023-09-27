@@ -9,7 +9,6 @@ import {
     BackHandler,
     RefreshControl
 } from 'react-native';
-import { withNavigation } from '@react-navigation/compat';
 import { listDirectConversations } from '../services/api';
 import Toolbar from '../components/ToolBar';
 import strings from '../lang/strings';
@@ -252,4 +251,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default withNavigation(ListDirectsScreen);
+export default ListDirectsScreen

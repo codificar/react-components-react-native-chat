@@ -7,7 +7,6 @@ import {
     Text,
     Image
 } from 'react-native';
-import { withNavigation } from '@react-navigation/compat';
 import { listProvidersForConversation } from '../services/api';
 import Toolbar from '../components/ToolBar';
 import { TextInput } from 'react-native-gesture-handler';
@@ -144,4 +143,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default withNavigation(ListProvidersForConversation);
+export default ListProvidersForConversation

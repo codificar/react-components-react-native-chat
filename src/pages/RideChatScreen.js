@@ -20,7 +20,6 @@ import {
     Day 
 } from 'react-native-gifted-chat';
 import { getMessageChat, seeMessage, sendMessage } from '../services/api';
-import { withNavigation } from '@react-navigation/compat';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
@@ -512,4 +511,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default withNavigation(RideChatScreen);
+export default RideChatScreen;

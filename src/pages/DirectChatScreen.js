@@ -8,7 +8,6 @@ import {
 import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { getMessageDirectChat, sendMessageDirectChat, responseQuickReply } from '../services/api';
-import { withNavigation } from '@react-navigation/compat';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
 import QuickReplies from 'react-native-gifted-chat/lib/QuickReplies';
@@ -389,4 +388,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default withNavigation(DirectChatScreen);
+export default DirectChatScreen
