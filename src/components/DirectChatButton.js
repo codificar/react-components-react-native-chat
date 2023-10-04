@@ -7,7 +7,6 @@ import {
     Image,
     Text
 } from 'react-native';
-import { withNavigation } from '@react-navigation/compat';
 import { getConversation } from '../services/api';
 import WebSocketServer from "../services/socket";
 import Badger from './Badger';
@@ -30,15 +29,13 @@ class DirectChatButton extends Component {
     }
 
     async navigateTo() {
-        this.props.navigation.navigate('ChatStack', {
-            screen: 'DirectChatScreen',
-            params: {
-                receiver: this.props.receiver,
-                url: this.props.url,
-                socket_url: this.props.socket_url,
-                id: this.props.id,
-                token: this.props.token,
-        }})
+        this.props.navigation.navigate('DirectChatScreen', {
+            receiver: this.props.receiver,
+            url: this.props.url,
+            socket_url: this.props.socket_url,
+            id: this.props.id,
+            token: this.props.token,
+        })
     }
 
     render() {
@@ -76,4 +73,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default withNavigation(DirectChatButton);
+export default DirectChatButton;

@@ -7,7 +7,6 @@ import {
     Image,
     Text
 } from 'react-native';
-import { withNavigation } from '@react-navigation/compat';
 import { getConversation } from '../services/api';
 import WebSocketServer from "../services/socket";
 import Badger from './Badger';
@@ -165,22 +164,20 @@ class RideButton extends Component {
             console.log('conversationId', conversationId);
         }
 
-        this.props.navigation.navigate('ChatStack', {
-            screen: 'RideChatScreen', 
-            params: {
-                receiveID: this.state.receiveID,
-                conversation_id: conversationId,
-                url: this.props.url,
-                socket_url: this.props.socket_url,
-                id: this.props.id,
-                token: this.props.token,
-                is_customer_chat: is_customer_chat,
-                requestId: this.props.request_id,
-                color: this.props.color,
-                userName: userName,
-                userAvatar: userAvatar,
-                impersonate: this.props.impersonate
-        }})
+        this.props.navigation.navigate('RideChatScreen', {
+            receiveID: this.state.receiveID,
+            conversation_id: conversationId,
+            url: this.props.url,
+            socket_url: this.props.socket_url,
+            id: this.props.id,
+            token: this.props.token,
+            is_customer_chat: is_customer_chat,
+            requestId: this.props.request_id,
+            color: this.props.color,
+            userName: userName,
+            userAvatar: userAvatar,
+            impersonate: this.props.impersonate
+        })
     }
 
     render() {
@@ -253,4 +250,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default withNavigation(RideButton);
+export default RideButton;

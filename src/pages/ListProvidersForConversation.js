@@ -7,7 +7,6 @@ import {
     Text,
     Image
 } from 'react-native';
-import { withNavigation } from '@react-navigation/compat';
 import { listProvidersForConversation } from '../services/api';
 import Toolbar from '../components/ToolBar';
 import { TextInput } from 'react-native-gesture-handler';
@@ -73,15 +72,13 @@ class ListProvidersForConversation extends Component {
                         keyExtractor={(x, i) => i.toString()}
                         renderItem={({ item, index }) => (
                             <TouchableOpacity
-                                onPress={() => this.props.navigation.navigate('ChatStack', {
-                                    screen: 'DirectChatScreen',
-                                    params: {
-                                        url: this.state.url,
-                                        socket_url: this.state.socket_url,
-                                        id: this.state.id,
-                                        token: this.state.token,
-                                        receiver: item.id
-                                }})}
+                                onPress={() => this.props.navigation.navigate( 'DirectChatScreen', {
+                                    url: this.state.url,
+                                    socket_url: this.state.socket_url,
+                                    id: this.state.id,
+                                    token: this.state.token,
+                                    receiver: item.id
+                                })}
                             >
                                 <View style={styles.row} >
                                     <Image
@@ -144,4 +141,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default withNavigation(ListProvidersForConversation);
+export default ListProvidersForConversation;
