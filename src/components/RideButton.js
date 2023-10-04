@@ -18,6 +18,11 @@ class RideButton extends Component {
     constructor(props) {
         super(props);
 
+        const isV4 = this.props.navigation.state !== undefined;
+
+        const blurEventName = isV4 ? "willBlur" : "blur";
+        const focusEventName = isV4 ? "willFocus" : "focus";
+
         this.state = {
             receiveID: 0,
             conversation_id: 0,
@@ -31,12 +36,12 @@ class RideButton extends Component {
 
         this.socket = WebSocketServer.connect(this.props.socket_url);
 
-        this.willFocus = this.props.navigation.addListener("focus", async () => {
+        this.willFocus = this.props.navigation.addListener(blurEventName, async () => {
             await this.getConversation();
             this.subscribeSocketNewConversation(this.props.request_id);
         });
 
-        this.willBlur = this.props.navigation.addListener("blur", () => {
+        this.willBlur = this.props.navigation.addListener(focusEventName, () => {
 			this.unsubscribeSocket();
 			this.unsubscribeSocketNewConversation();
 		});

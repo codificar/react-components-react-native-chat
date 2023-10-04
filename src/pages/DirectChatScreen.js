@@ -19,6 +19,11 @@ class DirectChatScreen extends Component {
         super(props);
         const paramRoute = this.props.navigation.state != undefined ? this.props.navigation.state.params : this.props.route.params;
 
+        const isV4 = this.props.navigation.state !== undefined;
+
+        const blurEventName = isV4 ? "willBlur" : "blur";
+        const focusEventName = isV4 ? "willFocus" : "focus";
+
         this.state = {
             url: paramRoute.url,
             id: paramRoute.id,
@@ -32,13 +37,11 @@ class DirectChatScreen extends Component {
 
         this.socket = WebSocketServer.connect(paramRoute.socket_url);
 
-        this.willBlur = this.props.navigation.addListener("blur", () => {
-            
+        this.willBlur = this.props.navigation.addListener(blurEventName, () => {
             this.unsubscribeSocket();
         })
 
-        this.willFocus = this.props.navigation.addListener("focus", async () => {
-
+        this.willFocus = this.props.navigation.addListener(focusEventName, async () => {
             await this.getMessages();
             this.subscribeSocket();
         });
