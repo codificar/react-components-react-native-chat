@@ -8,6 +8,7 @@ import {
 import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { getMessageHelpChat, sendMessageHelpChat } from '../services/api';
+import { withNavigation } from '@react-navigation/compat';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
 
@@ -322,4 +323,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default HelpChatScreen;
+export default withNavigation(HelpChatScreen);

@@ -7,6 +7,7 @@ import {
     Image,
     Text
 } from 'react-native';
+import { withNavigation } from '@react-navigation/compat';
 import { getConversation } from '../services/api';
 import WebSocketServer from "../services/socket";
 import Badger from './Badger';
@@ -252,4 +253,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default RideButton;
+export default withNavigation(RideButton);

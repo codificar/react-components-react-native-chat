@@ -6,6 +6,7 @@ import {
     StyleSheet,
     Image
 } from 'react-native';
+import { withNavigation } from '@react-navigation/compat';
 
 const icon = require('react-native-chat/src/img/chat.png');
 
@@ -63,4 +64,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default HelpButton;
+export default withNavigation(HelpButton);
