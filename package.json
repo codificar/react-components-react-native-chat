@@ -9,7 +9,7 @@
 
     "repository": {
       "type": "git",
-      "url": "git+https://git.codificar.com.br/react-components/react-native-chat"
+      "url": "git+https://github.com/codificar/react-components-react-native-chat"
     },
 
     "dependencies": {
@@ -26,8 +26,8 @@
     "author": "Codificar",
 
     "bugs": {
-      "url": "https://git.codificar.com.br/react-components/react-native-chat/issues"
+      "url": "https://https://github.com/codificar/react-components-react-native-chat/issues"
     },
 
-    "homepage": "https://git.codificar.com.br/react-components/react-native-chat#readme"
+    "homepage": "https://github.com/codificar/react-components-react-native-chatt#readme"
   }
