@@ -229,6 +229,7 @@ class DirectChatScreen extends Component {
                         sent: true,
                         received: false,
                         user: { _id: data.message.user_id },
+                        image: data.message.picture ? this.state.url + '/uploads/' + data.message.picture : null,
                     };
 
                     if (data.message.user_id !== this.state.ledger_id) {
