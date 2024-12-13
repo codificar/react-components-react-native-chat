@@ -32,8 +32,8 @@ class DirectChatScreen extends Component {
             messages: [],
             conversation: 0,
             ledger_id: 0,
-            is_refreshing: false,
-        }
+            is_refreshing: false
+        }        
 
         this.socket = WebSocketServer.connect(paramRoute.socket_url);
 
@@ -54,19 +54,34 @@ class DirectChatScreen extends Component {
             this.props.navigation.goBack();
             return true;
         });
+
+        this.socket.on('connect', () => {
+            console.log('Conectado ao WebSocket');
+        });
+
+        this.socket.on('connect_error', (error) => {
+            console.error('Erro na conexão WebSocket:', error);
+        });
+
+        this.subscribeSocket = this.subscribeSocket.bind(this);
+    }
+
+    componentWillUnmount() {
+        this.backHandler.remove();
+        this.unsubscribeSocket();
+        this.socket.disconnect();
     }
 
     unsubscribeSocket() {
         if (this.socket != null) {
             if (this.state.conversation) {
-                console.log('qweqwe', "conversation." + this.state.conversation);
-                this.socket.removeAllListeners("newConversation")
-                this.socket.removeAllListeners("newMessage")
-                this.socket.removeAllListeners("readMessage")
-                this.socket.removeAllListeners("newConversation")
+                console.log('Desinscrevendo do canal:', `conversation.${this.state.conversation}`);
+                this.socket.removeAllListeners("newConversation");
+                this.socket.removeAllListeners("newMessage");
+                this.socket.removeAllListeners("readMessage");
                 this.socket.emit("unsubscribe", {
-                    channel: "conversation." + this.state.conversation
-                })
+                    channel: `conversation.${this.state.conversation}`
+                });
             }
         }
     }
@@ -88,6 +103,8 @@ class DirectChatScreen extends Component {
             );
     
             const { data } = response;
+            console.log("Dados recebidos:", data)
+            console.log("User ledger ID:", data.user_ledger_id);
             const formattedArrayMessages = this.formatMessages(data.messages);
     
             this.setState({ 
@@ -110,43 +127,20 @@ class DirectChatScreen extends Component {
      */
     formatMessages (messages) {
         const formattedArrayMessages = messages;
+
         if (formattedArrayMessages.length > 0) {
             this.setState({
                 conversation: formattedArrayMessages[0].conversation_id
             })
             const finalArrayMessages = [];
-            
             for (let i = 0; i < formattedArrayMessages.length; i++) {
-                let quickReply = JSON.parse(formattedArrayMessages[i].response_quick_reply);
-                if((!!formattedArrayMessages[i].response_quick_reply && quickReply.answered == null)){
-                    
-                    finalArrayMessages.unshift({
-                        _id: formattedArrayMessages[i].id,
-                        createdAt: formattedArrayMessages[i].created_at,
-                        text: formattedArrayMessages[i].message,
-                        user: { _id: formattedArrayMessages[i].user_id },
-                        image: formattedArrayMessages[i].picture ? this.state.url + '/uploads/' + formattedArrayMessages[i].picture : null,
-                        quickReplies: {
-                            type: 'radio', // or 'checkbox',
-                            keepIt: true,
-                            values: quickReply.values,
-                            
-                        }
-                        
-                    });
-                } 
-                else {
-                    finalArrayMessages.unshift({
-                        _id: formattedArrayMessages[i].id,
-                        createdAt: formattedArrayMessages[i].created_at,
-                        text: formattedArrayMessages[i].message,
-                        user: { _id: formattedArrayMessages[i].user_id },
-                        image: formattedArrayMessages[i].picture ? this.state.url + '/uploads/' + formattedArrayMessages[i].picture : null                        
-                    });
-                }
-                
-
-            
+                finalArrayMessages.unshift({
+                    _id: formattedArrayMessages[i].id,
+                    createdAt: formattedArrayMessages[i].created_at,
+                    text: formattedArrayMessages[i].message,
+                    user: { _id: formattedArrayMessages[i].user_id },
+                    image: formattedArrayMessages[i].picture ? this.state.url + '/uploads/' + formattedArrayMessages[i].picture : null
+                });
             }
 
             return finalArrayMessages;
@@ -183,8 +177,7 @@ class DirectChatScreen extends Component {
      * @param {String} messages
      */
     async onSend(messages = []) {
-        try {
-            
+        try {           
             const response = await sendMessageDirectChat(
                 this.state.url,
                 this.state.id,
@@ -196,8 +189,9 @@ class DirectChatScreen extends Component {
             if (!this.state.conversation) {
                 this.setState({
                     conversation: response.data.conversation_id
+                }, () => {
+                    this.subscribeSocket();
                 });
-                this.subscribeSocket();
             }
     
             this.setState(previousState => ({
@@ -209,53 +203,56 @@ class DirectChatScreen extends Component {
     }
 
     /**
-     * @description  subscribe scoket
+     * @description  subscribe socket
      */
     subscribeSocket() {
-
         if (this.socket !== null && this.state.conversation !== null) {
             console.log(
                 `Tentando se conectar no canal conversation.${this.state.conversation}`,
             );
 
             this.socket
-            .emit('subscribe', {
-                channel: `conversation.${this.state.conversation}`,
-            })
-            .on('newMessage', (channel, data) => {
-                console.log(
-                    '===========Evento socket newMessage disparado! ',
-                    channel,
-                    data,
-                );
+                .emit('subscribe', {
+                    channel: `conversation.${this.state.conversation}`,
+                })
+                .on('newMessage', (channel, data) => {
+                    console.log(
+                        '===========Evento socket newMessage disparado!',
+                        channel,
+                        data,
+                    );
 
-                const newMessage = {
-                    _id: data.message.id,
-                    createdAt: data.message.created_at,
-                    text: data.message.message,
-                    sent: true,
-                    received: false,
-                    user: { _id: data.message.user_id },
-                };
+                    const newMessage = {
+                        _id: data.message.id,
+                        createdAt: data.message.created_at,
+                        text: data.message.message,
+                        sent: true,
+                        received: false,
+                        user: { _id: data.message.user_id },
+                    };
 
-                this.setState(state => {
-                    if (
-                        newMessage._id !==
-                        state.messages[state.messages.length - 1]._id &&
-                        data.message.user_id !== this.state.ledger_id
-                    ) {
-                        return {
-                            messages: GiftedChat.append(state.messages, newMessage),
-                        };
+                    if (data.message.user_id !== this.state.ledger_id) {
+                        this.play();
                     }
+
+                    this.setState(state => {
+                        if (
+                            !state.messages.some(message => message._id === newMessage._id) &&
+                            data.message.user_id !== this.state.ledger_id
+                        ) {
+                            return {
+                                messages: GiftedChat.append(state.messages, newMessage),
+                            };
+                        }
+                        return {};
+                    });
                 });
-            })
         }
-    }
+    }  
 
     /**
-     * render custom text message
-     *  @param {any} props
+     * Render custom text message
+     * @param {any} props
      */
     renderMessageText(props) {
         return (
@@ -267,7 +264,7 @@ class DirectChatScreen extends Component {
     }
 
     /**
-     * render bubble
+     * Render bubble
      * @param {any} props
      */
     renderBubble(props) {
@@ -284,7 +281,7 @@ class DirectChatScreen extends Component {
      * @param {any} props
      */
     renderSend(props) {
-        if (!props.text.trim()) return;
+        if (!props.text.trim()) return null;
 
         return (
             <Send {...props}>
@@ -309,9 +306,9 @@ class DirectChatScreen extends Component {
         />
     }
 
-     /**
-     * render custom text message
-     *  @param {any} props
+    /**
+     * Render custom quick replies
+     * @param {any} props
      */
     renderMessageQuickReplies(props) {
         return (
@@ -322,6 +319,13 @@ class DirectChatScreen extends Component {
         )
     }
 
+    /**
+     * Método para tocar um som de notificação
+     */
+    play() {
+        // Implemente a lógica para tocar um som de notificação
+        // Por exemplo, usando a biblioteca react-native-sound
+    }
 
     render() {
         return (
@@ -335,10 +339,10 @@ class DirectChatScreen extends Component {
                     locale="pt"
                     onSend={messages => this.onSend(messages)}
                     user={{ _id: this.state.ledger_id }}
-                    renderMessageText={this.renderMessageText}
-                    renderBubble={this.renderBubble}
-                    renderSend={props => this.renderSend(props)}
-                    renderQuickReplies={this.renderMessageQuickReplies}
+                    renderMessageText={this.renderMessageText.bind(this)}
+                    renderBubble={this.renderBubble.bind(this)}
+                    renderSend={this.renderSend.bind(this)}
+                    renderQuickReplies={this.renderMessageQuickReplies.bind(this)}
                     onQuickReply={(quickReply) => this.onQuickReply(quickReply)}
                     listViewProps={{
                         refreshControl: this.renderRefreshControl()
@@ -371,7 +375,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
         elevation: 5,
     },
-        rightBubble: {
+    rightBubble: {
         backgroundColor: '#687a95',
         elevation: 5,
         marginTop: 10,
