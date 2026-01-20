@@ -9,6 +9,7 @@ import {
     BackHandler,
     RefreshControl
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { withNavigation } from '@react-navigation/compat';
 import { listDirectConversations } from '../services/api';
 import Toolbar from '../components/ToolBar';
@@ -106,7 +107,7 @@ class ListDirectsScreen extends Component {
 
     render() {
         return (
-            <View style={styles.container}>
+            <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
                 <View>
                     <Toolbar onPress={() => this.props.navigation.goBack()} />
                     <Text style={styles.title}>{strings.directs}</Text>
@@ -192,7 +193,7 @@ class ListDirectsScreen extends Component {
                         </View>
                     }
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 }

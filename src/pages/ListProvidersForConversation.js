@@ -7,6 +7,7 @@ import {
     Text,
     Image
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { withNavigation } from '@react-navigation/compat';
 import { listProvidersForConversation } from '../services/api';
 import Toolbar from '../components/ToolBar';
@@ -55,7 +56,7 @@ class ListProvidersForConversation extends Component {
 
     render() {
         return (
-            <View style={styles.container}>
+            <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
                 <View>
                     <Toolbar />
                     <Text style={styles.title}>
@@ -96,7 +97,7 @@ class ListProvidersForConversation extends Component {
                         )}
                     />
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 }
