@@ -5,7 +5,7 @@ import {
     Bubble,
     MessageText
 } from 'react-native-gifted-chat';
-import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
+import { View, StyleSheet, BackHandler, Image, RefreshControl, SafeAreaView } from 'react-native';
 import Toolbar from '../components/ToolBar';
 import { getMessageHelpChat, sendMessageHelpChat } from '../services/api';
 import { withNavigation } from '@react-navigation/compat';
@@ -259,7 +259,7 @@ class HelpChatScreen extends Component {
 
     render() {
         return (
-            <View style={styles.container}>
+            <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
                 <View style={{ marginLeft: 25 }}>
                     <Toolbar onPress={() => this.props.navigation.goBack()} />
                 </View>
@@ -276,7 +276,7 @@ class HelpChatScreen extends Component {
                         refreshControl: this.renderRefreshControl()
                     }}
                 />
-            </View>
+            </SafeAreaView>
         );
     }
 }

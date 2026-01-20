@@ -400,7 +400,7 @@ class RideChatScreen extends Component {
     render() {
 
         return (
-            <SafeAreaView style={styles.container}>
+            <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
                 <View style={styles.headerView}>
                     <TouchableOpacity
                       activeOpacity={0.7}
