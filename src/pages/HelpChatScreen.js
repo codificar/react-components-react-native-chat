@@ -5,7 +5,8 @@ import {
     Bubble,
     MessageText
 } from 'react-native-gifted-chat';
-import { View, StyleSheet, BackHandler, Image, RefreshControl, SafeAreaView } from 'react-native';
+import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toolbar from '../components/ToolBar';
 import { getMessageHelpChat, sendMessageHelpChat } from '../services/api';
 import { withNavigation } from '@react-navigation/compat';
