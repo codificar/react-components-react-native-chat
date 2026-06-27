@@ -7,9 +7,9 @@ import {
     StyleSheet,
     Image,
     RefreshControl,
-    Text,
-    SafeAreaView
+    Text
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toolbar from '../components/ToolBar';
 import { 
     GiftedChat, 
@@ -420,6 +420,7 @@ class RideChatScreen extends Component {
                     </Text>
                 </View>
                 <GiftedChat
+                    wrapInSafeArea={false}
                     messages={this.state.messages}
                     placeholder={strings.send_message}
                     locale='pt'
@@ -459,7 +460,8 @@ const styles = StyleSheet.create({
     },
     leftBubble: {
         backgroundColor: '#FBFBFB',
-        marginTop: 10
+        marginTop: 10,
+        elevation: 5,
     },
     rightBubble: {
         backgroundColor: '#FBFBFB',
@@ -492,6 +494,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         paddingTop: 10,
         paddingBottom: 10,
+        paddingHorizontal: 10,
         alignItems: 'center',
         backgroundColor: 'white'
     },
@@ -503,12 +506,6 @@ const styles = StyleSheet.create({
     send: {
         width: 25,
         height: 25
-    },
-    leftBubble: {
-        marginLeft: -30,
-        backgroundColor: '#FBFBFB',
-        marginTop: 10,
-        elevation: 5,
     },
 });
 
