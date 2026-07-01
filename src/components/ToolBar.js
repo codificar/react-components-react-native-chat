@@ -1,5 +1,5 @@
 import React from 'react';
-import { getStatusBarHeight } from 'react-native-status-bar-height';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Dimensions,
@@ -10,13 +10,14 @@ import {
 
 const arrow = require('react-native-chat/src/img/left-arrow.png');
 const { width } = Dimensions.get('window');
-const statusbarHeight = getStatusBarHeight(true);
 
 
 function ToolBar({ onPress }) {
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.principal2}>
+    <View style={[styles.principal2, { marginTop: 20 + insets.top }]}>
       <View style={{ height: 40 }}>
         <TouchableOpacity
           style={{ width: 60 }}
@@ -36,19 +37,19 @@ function ToolBar({ onPress }) {
 const styles = StyleSheet.create({
   principal: {
     width: width,
-    height: 90 + statusbarHeight,
+    height: 90,
     position: "absolute",
     top: 0,
   },
   principal2: {
     height: 40,
     width: "100%",
-    marginTop: 20 + statusbarHeight,
+    marginTop: 20,
     elevation: 1
   },
   iconPress: {
     position: "absolute",
-    top: 10 + statusbarHeight,
+    top: 10,
     left: 20,
     alignItems: 'center',
     justifyContent: 'center',
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   },
   areaImage: {
     position: "absolute",
-    top: 10 + statusbarHeight,
+    top: 10,
     left: 20,
     alignItems: 'center',
     justifyContent: 'center',

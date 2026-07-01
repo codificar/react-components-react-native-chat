@@ -20,7 +20,8 @@
     },
     
     "peerDependencies": {
-        "react-native": ">=0.47.0"
+        "react-native": ">=0.47.0",
+        "react-native-safe-area-context": ">=4.0.0"
     },
 
     "author": "Codificar",
