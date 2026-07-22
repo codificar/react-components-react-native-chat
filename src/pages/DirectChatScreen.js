@@ -45,8 +45,6 @@ class DirectChatScreen extends Component {
             await this.getMessages();
             this.subscribeSocket();
         });
-
-        this.getMessages();
     }
 
     componentDidMount() {
@@ -64,6 +62,8 @@ class DirectChatScreen extends Component {
         });
 
         this.subscribeSocket = this.subscribeSocket.bind(this);
+
+        this.getMessages();
     }
 
     componentWillUnmount() {
@@ -384,7 +384,6 @@ const styles = StyleSheet.create({
     contImg: {
         marginRight: 15,
         marginBottom: 6,
-        textTransform: 'uppercase',
         width: 30,
         height: 30,
         justifyContent: "center",

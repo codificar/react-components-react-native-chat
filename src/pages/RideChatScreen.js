@@ -475,7 +475,6 @@ const styles = StyleSheet.create({
     contImg: {
         marginRight: 15,
         marginBottom: 6,
-        textTransform: 'uppercase',
         width: 30,
         height: 30,
         justifyContent: "center",
