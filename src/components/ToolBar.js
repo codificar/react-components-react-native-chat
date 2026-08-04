@@ -1,88 +1,48 @@
 import React from 'react';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  View,
-  Dimensions,
-  TouchableOpacity,
-  StyleSheet,
-  Image
-} from 'react-native';
+import Icon from 'react-native-vector-icons/Feather';
 
-const arrow = require('react-native-chat/src/img/left-arrow.png');
-const { width } = Dimensions.get('window');
+// Padronizado para o padrao ScreenHeader do app: inset superior via
+// useSafeAreaInsets (confiavel), linha de acoes de 56dp, alvo de toque de
+// 48dp, icone Feather arrow-left de 24dp a 16dp da borda, acessibilidade.
+// Replicado localmente porque a lib nao pode importar App/Components.
+const ICON_SIZE = 24;
+const TOUCH_SIZE = 48;
+const EDGE = 16;
 
-
-function ToolBar({ onPress }) {
-
+function ToolBar({ onPress, accessibilityLabel = 'Voltar' }) {
   const insets = useSafeAreaInsets();
-
   return (
-    <View style={[styles.principal2, { marginTop: 20 + insets.top }]}>
-      <View style={{ height: 40 }}>
+    <View style={{ paddingTop: insets.top }}>
+      <View style={styles.row}>
         <TouchableOpacity
-          style={{ width: 60 }}
+          style={styles.target}
           onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Image
-            style={styles.img}
-            source={arrow}
-          />
+          <Icon name="arrow-left" size={ICON_SIZE} color="#000000" />
         </TouchableOpacity>
       </View>
     </View>
-  )
+  );
 }
 
-
 const styles = StyleSheet.create({
-  principal: {
-    width: width,
-    height: 90,
-    position: "absolute",
-    top: 0,
+  row: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: EDGE - (TOUCH_SIZE - ICON_SIZE) / 2,
   },
-  principal2: {
-    height: 40,
-    width: "100%",
-    marginTop: 20,
-    elevation: 1
-  },
-  iconPress: {
-    position: "absolute",
-    top: 10,
-    left: 20,
+  target: {
+    width: TOUCH_SIZE,
+    height: TOUCH_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 55,
-    height: 55,
-
-
   },
-  areaImage: {
-    position: "absolute",
-    top: 10,
-    left: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 55,
-    height: 55,
-    borderRadius: 45,
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 5,
-    shadowColor: "#000",
-    elevation: 3,
-    overflow: "hidden",
-    backgroundColor: "#ffffff",
-    padding: 3,
-    borderColor: "#fff",
-    borderWidth: 4
-  },
-  img: {
-    height: 30,
-    width: 30
-  },
-
 });
 
 export default ToolBar;

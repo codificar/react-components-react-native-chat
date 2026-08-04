@@ -6,6 +6,7 @@ import {
     MessageText
 } from 'react-native-gifted-chat';
 import { View, StyleSheet, BackHandler, Image, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toolbar from '../components/ToolBar';
 import { getMessageHelpChat, sendMessageHelpChat } from '../services/api';
 import WebSocketServer from "../services/socket";
@@ -261,10 +262,8 @@ class HelpChatScreen extends Component {
 
     render() {
         return (
-            <View style={styles.container}>
-                <View style={{ marginLeft: 25 }}>
-                    <Toolbar onPress={() => this.props.navigation.goBack()} />
-                </View>
+            <SafeAreaView style={styles.container} edges={['left', 'right']}>
+                <Toolbar onPress={() => this.props.navigation.goBack()} />
                 <GiftedChat
                     messages={this.state.messages}
                     placeholder={strings.send_message}
@@ -278,7 +277,7 @@ class HelpChatScreen extends Component {
                         refreshControl: this.renderRefreshControl()
                     }}
                 />
-            </View>
+            </SafeAreaView>
         );
     }
 }

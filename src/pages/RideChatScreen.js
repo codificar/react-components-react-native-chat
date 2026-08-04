@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
-import { 
-    View, 
-    TouchableOpacity, 
-    BackHandler, 
+import {
+    View,
+    TouchableOpacity,
+    BackHandler,
     Vibration,
     StyleSheet,
     Image,
@@ -404,7 +404,7 @@ class RideChatScreen extends Component {
     render() {
 
         return (
-            <SafeAreaView style={styles.container}>
+            <SafeAreaView style={styles.container} edges={['left', 'right']}>
                 <View style={styles.headerView}>
                     <TouchableOpacity
                       activeOpacity={0.7}

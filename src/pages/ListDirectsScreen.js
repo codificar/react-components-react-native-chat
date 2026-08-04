@@ -9,6 +9,7 @@ import {
     BackHandler,
     RefreshControl
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { listDirectConversations } from '../services/api';
 import Toolbar from '../components/ToolBar';
 import strings from '../lang/strings';
@@ -101,8 +102,8 @@ class ListDirectsScreen extends Component {
 
     render() {
         return (
-            <View style={styles.container}>
-                <View>
+            <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+                <View style={{ marginHorizontal: -25 }}>
                     <Toolbar onPress={() => this.props.navigation.goBack()} />
                     <Text style={styles.title}>{strings.directs}</Text>
                 </View>
@@ -185,7 +186,7 @@ class ListDirectsScreen extends Component {
                         </View>
                     }
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 }
@@ -199,8 +200,9 @@ const styles = StyleSheet.create({
         color: "#222B45",
         fontSize: 28,
         fontWeight: "bold",
-        marginBottom: 10
-    },  
+        marginBottom: 10,
+        marginLeft: 25
+    },
     img: {
         width: 50,
         height: 50,
