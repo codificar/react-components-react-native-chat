@@ -404,7 +404,7 @@ class RideChatScreen extends Component {
     render() {
 
         return (
-            <SafeAreaView style={styles.container} edges={['left', 'right']}>
+            <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
                 <View style={styles.headerView}>
                     <TouchableOpacity
                       activeOpacity={0.7}
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     headerView: {
         width: '100%',
         flexDirection: 'row',
-        paddingTop: 10,
+        paddingTop: 0,
         paddingBottom: 10,
         paddingHorizontal: 10,
         alignItems: 'center',

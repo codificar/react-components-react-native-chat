@@ -331,7 +331,7 @@ class DirectChatScreen extends Component {
 
     render() {
         return (
-            <SafeAreaView style={styles.container} edges={['left', 'right']}>
+            <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
                 <Toolbar onPress={() => this.props.navigation.goBack()}/>
                 <GiftedChat
                     messages={this.state.messages}
