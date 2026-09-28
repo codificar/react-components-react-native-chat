@@ -257,8 +257,20 @@ class RideChatScreen extends Component {
                     this.getConversation();
                 };
 
-                this.socket.emit("subscribe", { channel: "request." + id_request })
-                    .on("newConversation", this._onNewConversation)
+                this.socket.on("newConversation", this._onNewConversation);
+
+                const channel = "request." + id_request;
+                if (this._subscribedRequestChannel === channel) {
+                    WebSocketServer.emitSubscribe(channel);
+                    return;
+                }
+
+                if (this._subscribedRequestChannel) {
+                    WebSocketServer.unsubscribeChannel(this._subscribedRequestChannel);
+                }
+
+                this._subscribedRequestChannel = channel;
+                WebSocketServer.subscribeChannel(channel);
             }
         } catch (error) {
             console.log('Erro subscribeSocketNewConversation:', error)
@@ -277,44 +289,65 @@ class RideChatScreen extends Component {
             this.socket.off("newMessage", this._onNewMessage);
         }
 
-        this._subscribedConversationId = id;
-
         this._onNewMessage = (channel, data) => {
             console.log('Evento socket newMessage disparado! ', channel, data)
 
+            if (!data || !data.message) {
+                return;
+            }
+
+            const message = data.message;
             let newMessage = {
-                _id: data.message.id,
-                createdAt: data.message.created_at,
-                text: data.message.message,
+                _id: message.id,
+                createdAt: message.created_at,
+                text: message.message,
                 sent: true,
                 received: false,
-                user: { _id: data.message.user_id }
+                user: { _id: message.user_id }
             }
             console.log('newMessage: ', newMessage);
 
             this.setState(state => {
-                const lastMessage = state.messages[state.messages.length - 1];
-                if (
-                    (!lastMessage || newMessage._id !== lastMessage._id) &&
-                    data.message.user_id !== this.state.userLedgeId
-                ) {
-                    return {
-                        messages: GiftedChat.append(state.messages, newMessage),
-                    };
+                const alreadyExists = (state.messages || []).some(
+                    item => String(item._id) === String(newMessage._id)
+                );
+                if (alreadyExists) {
+                    return null;
                 }
-                return null;
+
+                if (Number(message.user_id) === Number(this.state.userLedgeId)) {
+                    return null;
+                }
+
+                return {
+                    messages: GiftedChat.append(state.messages, newMessage),
+                };
             });
 
-            this.setState({ lastIdMessage: data.message.id });
-            if (data.message.is_seen == 0 && data.message.user_id !== this.state.userLedgeId) {
+            this.setState({ lastIdMessage: message.id });
+            if (message.is_seen == 0 && Number(message.user_id) !== Number(this.state.userLedgeId)) {
                 this.playSoundRequest();
                 this.seeMessage();
             }
         };
 
-        this.socket
-            .emit("subscribe", { channel: "conversation." + id })
-            .on("newMessage", this._onNewMessage)
+        this.socket.on("newMessage", this._onNewMessage);
+
+        const channel = "conversation." + id;
+
+        if (this._subscribedConversationId === id) {
+            WebSocketServer.emitSubscribe(channel);
+            return;
+        }
+
+        if (this._subscribedConversationId) {
+            WebSocketServer.unsubscribeChannel(
+                "conversation." + this._subscribedConversationId
+            );
+        }
+
+        this._subscribedConversationId = id;
+        WebSocketServer.subscribeChannel(channel);
     }
 
     unsubscribeSocket() {
@@ -325,9 +358,7 @@ class RideChatScreen extends Component {
             }
             const conversationId = this._subscribedConversationId || this.state.conversation_id;
             if (conversationId) {
-                this.socket.emit("unsubscribe", {
-                    channel: "conversation." + conversationId
-                })
+                WebSocketServer.unsubscribeChannel("conversation." + conversationId);
             }
             this._subscribedConversationId = null;
         }
@@ -337,6 +368,10 @@ class RideChatScreen extends Component {
         if (this.socket && this._onNewConversation) {
             this.socket.off("newConversation", this._onNewConversation);
             this._onNewConversation = null;
+        }
+        if (this._subscribedRequestChannel) {
+            WebSocketServer.unsubscribeChannel(this._subscribedRequestChannel);
+            this._subscribedRequestChannel = null;
         }
     }
 

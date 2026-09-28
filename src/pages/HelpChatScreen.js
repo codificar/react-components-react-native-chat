@@ -73,9 +73,7 @@ class HelpChatScreen extends Component {
             }
             const conversationId = this._subscribedConversationId || this.state.conversation;
             if (conversationId) {
-                this.socket.emit("unsubscribe", {
-                    channel: "conversation." + conversationId
-                })
+                WebSocketServer.unsubscribeChannel("conversation." + conversationId);
             }
             this._subscribedConversationId = null;
         }
@@ -185,53 +183,74 @@ class HelpChatScreen extends Component {
     subscribeSocket(conversationId) {
         const id = conversationId || this.state.conversation;
 
-        if (this.socket !== null && id) {
+        if (this.socket === null || !id) {
+            return;
+        }
+
+        console.log(
+            `Tentando se conectar no canal conversation.${id}`,
+        );
+
+        if (this._onNewMessage) {
+            this.socket.off('newMessage', this._onNewMessage);
+        }
+
+        this._onNewMessage = (channel, data) => {
             console.log(
-                `Tentando se conectar no canal conversation.${id}`,
+                '===========Evento socket newMessage disparado! ',
+                channel,
+                data,
             );
 
-            if (this._onNewMessage) {
-                this.socket.off('newMessage', this._onNewMessage);
+            if (!data || !data.message) {
+                return;
             }
 
-            this._subscribedConversationId = id;
-
-            this._onNewMessage = (channel, data) => {
-                console.log(
-                    '===========Evento socket newMessage disparado! ',
-                    channel,
-                    data,
-                );
-
-                const newMessage = {
-                    _id: data.message.id,
-                    createdAt: data.message.created_at,
-                    text: data.message.message,
-                    sent: true,
-                    received: false,
-                    user: { _id: data.message.user_id },
-                };
-
-                this.setState(state => {
-                    const lastMessage = state.messages[state.messages.length - 1];
-                    if (
-                        (!lastMessage || newMessage._id !== lastMessage._id) &&
-                        data.message.user_id !== this.state.ledger_id
-                    ) {
-                        return {
-                            messages: GiftedChat.append(state.messages, newMessage),
-                        };
-                    }
-                    return null;
-                });
+            const message = data.message;
+            const newMessage = {
+                _id: message.id,
+                createdAt: message.created_at,
+                text: message.message,
+                sent: true,
+                received: false,
+                user: { _id: message.user_id },
             };
 
-            this.socket
-            .emit('subscribe', {
-                channel: `conversation.${id}`,
-            })
-            .on('newMessage', this._onNewMessage)
+            this.setState(state => {
+                const alreadyExists = (state.messages || []).some(
+                    item => String(item._id) === String(newMessage._id)
+                );
+                if (alreadyExists) {
+                    return null;
+                }
+
+                if (Number(message.user_id) === Number(this.state.ledger_id)) {
+                    return null;
+                }
+
+                return {
+                    messages: GiftedChat.append(state.messages, newMessage),
+                };
+            });
+        };
+
+        this.socket.on('newMessage', this._onNewMessage);
+
+        const channel = `conversation.${id}`;
+
+        if (this._subscribedConversationId === id) {
+            WebSocketServer.emitSubscribe(channel);
+            return;
         }
+
+        if (this._subscribedConversationId) {
+            WebSocketServer.unsubscribeChannel(
+                "conversation." + this._subscribedConversationId
+            );
+        }
+
+        this._subscribedConversationId = id;
+        WebSocketServer.subscribeChannel(channel);
     }
 
     /**

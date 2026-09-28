@@ -70,9 +70,20 @@ class RideButton extends Component {
             });
         };
 
-		this.socket
-			.emit("subscribe", { channel: "conversation." + id })
-			.on("newMessage", this._onConversationNewMessage)
+        this.socket.on("newMessage", this._onConversationNewMessage);
+
+        const channel = "conversation." + id;
+        if (this._subscribedConversationChannel === channel) {
+            WebSocketServer.emitSubscribe(channel);
+            return;
+        }
+
+        if (this._subscribedConversationChannel) {
+            WebSocketServer.unsubscribeChannel(this._subscribedConversationChannel);
+        }
+
+        this._subscribedConversationChannel = channel;
+        WebSocketServer.subscribeChannel(channel);
 	}
 
     subscribeSocketNewConversation(id_request) {
@@ -95,8 +106,20 @@ class RideButton extends Component {
                 console.log('Evento socket newConversation disparado! ', channel, data)
             };
 
-			this.socket.emit("subscribe", { channel: "request." + id_request })
-				.on("newConversation", this._onNewConversation)
+            this.socket.on("newConversation", this._onNewConversation);
+
+            const channel = "request." + id_request;
+            if (this._subscribedRequestChannel === channel) {
+                WebSocketServer.emitSubscribe(channel);
+                return;
+            }
+
+            if (this._subscribedRequestChannel) {
+                WebSocketServer.unsubscribeChannel(this._subscribedRequestChannel);
+            }
+
+            this._subscribedRequestChannel = channel;
+            WebSocketServer.subscribeChannel(channel);
 		} catch (error) {
 			console.log('Erro subscribeSocketNewConversation:', error)
 		}
@@ -107,6 +130,10 @@ class RideButton extends Component {
             this.socket.off("newConversation", this._onNewConversation);
             this._onNewConversation = null;
         }
+        if (this._subscribedRequestChannel) {
+            WebSocketServer.unsubscribeChannel(this._subscribedRequestChannel);
+            this._subscribedRequestChannel = null;
+        }
     }
 
     unsubscribeSocket() {
@@ -115,10 +142,13 @@ class RideButton extends Component {
                 this.socket.off("newMessage", this._onConversationNewMessage);
                 this._onConversationNewMessage = null;
             }
-            if (this.state.conversation_id) {
-                this.socket.emit("unsubscribe", {
-                    channel: "conversation." + this.state.conversation_id
-                })
+            if (this._subscribedConversationChannel) {
+                WebSocketServer.unsubscribeChannel(this._subscribedConversationChannel);
+                this._subscribedConversationChannel = null;
+            } else if (this.state.conversation_id) {
+                WebSocketServer.unsubscribeChannel(
+                    "conversation." + this.state.conversation_id
+                );
             }
         }
     }
