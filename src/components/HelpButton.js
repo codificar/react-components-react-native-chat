@@ -28,15 +28,13 @@ class HelpButton extends Component {
             <View>
                 <TouchableOpacity
                     style={styles.chatBtn}
-                    onPress={() => this.props.navigation.navigate('ChatStack', {
-                        screen: 'HelpChatScreen',
-                        params: {
+                    onPress={() => this.props.navigation.navigate('HelpChatScreen', {
                             url: this.props.url,
                             socket_url: this.props.socket_url,
                             id: this.props.id,
                             token: this.props.token,
                             request_id: this.props.request_id
-                    }})}
+                    })}
                 >
                     <Image 
                         style={styles.img}

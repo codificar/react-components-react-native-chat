@@ -32,19 +32,31 @@ class RideButton extends Component {
 
         this.socket = WebSocketServer.connect(this.props.socket_url);
 
-        this.willFocus = this.props.navigation.addListener("focus", async () => {
+        this.focusListener = this.props.navigation.addListener("focus", async () => {
             await this.getConversation();
             this.subscribeSocketNewConversation(this.props.request_id);
         });
 
-        this.willBlur = this.props.navigation.addListener("blur", () => {
-			this.unsubscribeSocket();
-			this.unsubscribeSocketNewConversation();
-		});
+        this.blurListener = this.props.navigation.addListener("blur", () => {
+            this.unsubscribeSocket();
+            this.unsubscribeSocketNewConversation();
+        });
     }
 
     componentDidMount() {
-        
+        this.getConversation();
+        this.subscribeSocketNewConversation(this.props.request_id);
+    }
+
+    componentWillUnmount() {
+        try {
+            this.focusListener && this.focusListener();
+            this.blurListener && this.blurListener();
+            this.unsubscribeSocket();
+            this.unsubscribeSocketNewConversation();
+        } catch (error) {
+            console.log('RideButton componentWillUnmount Error:', error);
+        }
     }
 
     subscribeSocketConversation(id) {
@@ -165,22 +177,20 @@ class RideButton extends Component {
             console.log('conversationId', conversationId);
         }
 
-        this.props.navigation.navigate('ChatStack', {
-            screen: 'RideChatScreen', 
-            params: {
-                receiveID: this.state.receiveID,
-                conversation_id: conversationId,
-                url: this.props.url,
-                socket_url: this.props.socket_url,
-                id: this.props.id,
-                token: this.props.token,
-                is_customer_chat: is_customer_chat,
-                requestId: this.props.request_id,
-                color: this.props.color,
-                userName: userName,
-                userAvatar: userAvatar,
-                impersonate: this.props.impersonate
-        }})
+        this.props.navigation.navigate('RideChatScreen', {
+            receiveID: this.state.receiveID,
+            conversation_id: conversationId,
+            url: this.props.url,
+            socket_url: this.props.socket_url,
+            id: this.props.id,
+            token: this.props.token,
+            is_customer_chat: is_customer_chat,
+            requestId: this.props.request_id,
+            color: this.props.color,
+            userName: userName,
+            userAvatar: userAvatar,
+            impersonate: this.props.impersonate
+        })
     }
 
     render() {

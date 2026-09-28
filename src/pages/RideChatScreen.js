@@ -90,7 +90,11 @@ class RideChatScreen extends Component {
 
     componentWillUnmount() {
         try {
-          this.backHandler.remove();
+          this.backHandler && this.backHandler.remove();
+          this.willBlur && this.willBlur();
+          this.willFocus && this.willFocus();
+          this.unsubscribeSocket();
+          this.unsubscribeSocketNewConversation();
         } catch (error) {
           console.log('this.componentWillUnmount Error:', error);
         }
@@ -188,8 +192,8 @@ class RideChatScreen extends Component {
     subscribeSocketNewConversation(id_request) {
         console.log('subscribeSocketNewConversation:', id_request)
         try {
-            if (this.props.conversation_id == 0) {
-                constants.socket.emit("subscribe", { channel: "request." + id_request })
+            if (!this.state.conversation_id || this.state.conversation_id == 0) {
+                this.socket.emit("subscribe", { channel: "request." + id_request })
                     .on("newConversation", (channel, data) => {
                         console.log('Evento socket newConversation disparado! ', channel, data)
                         this.setState({
@@ -236,7 +240,7 @@ class RideChatScreen extends Component {
                 });
 
                 this.setState({ lastIdMessage: data.message.id });
-                if (data.message.is_seen == 0 && data.message.user_id !== this.props.ledger) {
+                if (data.message.is_seen == 0 && data.message.user_id !== this.state.userLedgeId) {
                     this.playSoundRequest();
                     this.seeMessage();
                 }
@@ -296,11 +300,9 @@ class RideChatScreen extends Component {
                 }
             }
 
-            if (this.state.messages.length > 0) {
-                this.setState(previousState => ({
-                    messages: GiftedChat.append(previousState.messages, messages),
-                }));
-            }
+            this.setState(previousState => ({
+                messages: GiftedChat.append(previousState.messages, messages),
+            }));
         } catch (error) {
             console.log("error send:", error)
         }

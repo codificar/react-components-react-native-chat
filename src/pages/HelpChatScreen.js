@@ -49,7 +49,13 @@ class HelpChatScreen extends Component {
     }
 
     componentWillUnmount() {
-		this.backHandler.remove();
+        try {
+            this.backHandler && this.backHandler.remove();
+            this.willBlur && this.willBlur();
+            this.unsubscribeSocket();
+        } catch (error) {
+            console.log('HelpChatScreen componentWillUnmount Error:', error);
+        }
 	}
 
 

@@ -81,19 +81,15 @@ class ListDirectsScreen extends Component {
 
     navigateToChatScreen(item) {
         if (!item.request_id || item.request_id == 0)
-            this.props.navigation.navigate('ChatStack', {
-                screen: 'DirectChatScreen',
-                params: {
+            this.props.navigation.navigate('DirectChatScreen', {
                     url: this.state.url,
                     socket_url: this.state.socket_url,
                     id: this.state.id,
                     token: this.state.token,
                     receiver: item.id
-            }})
+            })
         else
-            this.props.navigation.navigate('ChatStack', {
-                screen: 'RideChatScreen',
-                params: {
+            this.props.navigation.navigate('RideChatScreen', {
                     conversation_id: item.conversation_id,
                     url: this.state.url,
                     socket_url: this.state.socket_url,
@@ -101,7 +97,7 @@ class ListDirectsScreen extends Component {
                     token: this.state.token,
                     requestId: item.request_id,
                     color: '#687a95'
-            }});
+            });
     }
 
     render() {
@@ -118,14 +114,12 @@ class ListDirectsScreen extends Component {
                         style={styles.box_new}
                     >
                         <TouchableOpacity
-                            onPress={() => this.props.navigation.navigate('ChatStack', {
-                                screen: 'ListProvidersForConversation',
-                                params: {
+                            onPress={() => this.props.navigation.navigate('ListProvidersForConversation', {
                                     url: this.state.url,
                                     socket_url: this.state.socket_url,
                                     id: this.state.id,
                                     token: this.state.token
-                            }})}
+                            })}
                         >
                             <Text style={styles.box_new_txt}>
                                 {strings.new_direct}

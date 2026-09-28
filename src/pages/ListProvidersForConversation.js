@@ -73,15 +73,13 @@ class ListProvidersForConversation extends Component {
                         keyExtractor={(x, i) => i.toString()}
                         renderItem={({ item, index }) => (
                             <TouchableOpacity
-                                onPress={() => this.props.navigation.navigate('ChatStack', {
-                                    screen: 'DirectChatScreen',
-                                    params: {
+                                onPress={() => this.props.navigation.navigate('DirectChatScreen', {
                                         url: this.state.url,
                                         socket_url: this.state.socket_url,
                                         id: this.state.id,
                                         token: this.state.token,
                                         receiver: item.id
-                                }})}
+                                })}
                             >
                                 <View style={styles.row} >
                                     <Image

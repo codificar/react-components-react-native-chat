@@ -54,6 +54,17 @@ class DirectChatScreen extends Component {
         });
     }
 
+    componentWillUnmount() {
+        try {
+            this.backHandler && this.backHandler.remove();
+            this.willBlur && this.willBlur();
+            this.willFocus && this.willFocus();
+            this.unsubscribeSocket();
+        } catch (error) {
+            console.log('DirectChatScreen componentWillUnmount Error:', error);
+        }
+    }
+
     unsubscribeSocket() {
         if (this.socket != null) {
             if (this.state.conversation) {

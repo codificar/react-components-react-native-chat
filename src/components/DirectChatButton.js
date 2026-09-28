@@ -3,16 +3,9 @@ import {
     View,
     TouchableOpacity,
     StyleSheet,
-    Vibration,
-    Image,
     Text
 } from 'react-native';
 import { withNavigation } from '@react-navigation/compat';
-import { getConversation } from '../services/api';
-import WebSocketServer from "../services/socket";
-import Badger from './Badger';
-
-const icon = require('react-native-chat/src/img/chat.png');
 import strings from '../lang/strings';
 
 class DirectChatButton extends Component {
@@ -30,15 +23,13 @@ class DirectChatButton extends Component {
     }
 
     async navigateTo() {
-        this.props.navigation.navigate('ChatStack', {
-            screen: 'DirectChatScreen',
-            params: {
-                receiver: this.props.receiver,
-                url: this.props.url,
-                socket_url: this.props.socket_url,
-                id: this.props.id,
-                token: this.props.token,
-        }})
+        this.props.navigation.navigate('DirectChatScreen', {
+            receiver: this.props.receiver,
+            url: this.props.url,
+            socket_url: this.props.socket_url,
+            id: this.props.id,
+            token: this.props.token,
+        })
     }
 
     render() {

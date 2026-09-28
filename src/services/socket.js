@@ -1,5 +1,4 @@
 import io from "socket.io-client";
-import _ from "lodash";
 
 export default (WebSocketServer = {
   isConnected: false,
