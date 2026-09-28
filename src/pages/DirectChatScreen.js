@@ -15,10 +15,36 @@ import QuickReplies from 'react-native-gifted-chat/lib/QuickReplies';
 
 const send = require('react-native-chat/src/img/send.png');
 
+function resolveRouteParams(props) {
+    const navParams = props.navigation && props.navigation.state && props.navigation.state.params;
+    if (navParams && Object.keys(navParams).length) {
+        return navParams;
+    }
+    return (props.route && props.route.params) || {};
+}
+
+function parseQuickReply(raw) {
+    if (raw == null || raw === '') {
+        return null;
+    }
+    if (typeof raw === 'object') {
+        return raw;
+    }
+    if (typeof raw === 'string') {
+        try {
+            return JSON.parse(raw);
+        } catch (error) {
+            console.log('DirectChatScreen parseQuickReply Error:', error);
+            return null;
+        }
+    }
+    return null;
+}
+
 class DirectChatScreen extends Component {
     constructor(props) {
         super(props);
-        const paramRoute = this.props.navigation.state != undefined ? this.props.navigation.state.params : this.props.route.params;
+        const paramRoute = resolveRouteParams(this.props);
 
         this.state = {
             url: paramRoute.url,
@@ -34,14 +60,11 @@ class DirectChatScreen extends Component {
         this.socket = WebSocketServer.connect(paramRoute.socket_url);
 
         this.willBlur = this.props.navigation.addListener("blur", () => {
-            
             this.unsubscribeSocket();
         })
 
         this.willFocus = this.props.navigation.addListener("focus", async () => {
-
             await this.getMessages();
-            this.subscribeSocket();
         });
 
         this.getMessages();
@@ -71,12 +94,13 @@ class DirectChatScreen extends Component {
                 this.socket.off("newMessage", this._onNewMessage);
                 this._onNewMessage = null;
             }
-            if (this.state.conversation) {
-                console.log('qweqwe', "conversation." + this.state.conversation);
+            const conversationId = this._subscribedConversationId || this.state.conversation;
+            if (conversationId) {
                 this.socket.emit("unsubscribe", {
-                    channel: "conversation." + this.state.conversation
+                    channel: "conversation." + conversationId
                 })
             }
+            this._subscribedConversationId = null;
         }
     }
 
@@ -97,13 +121,23 @@ class DirectChatScreen extends Component {
             );
     
             const { data } = response;
-            const formattedArrayMessages = this.formatMessages(data.messages);
-    
+            const rawMessages = data.messages || [];
+            const formattedArrayMessages = this.formatMessages(rawMessages);
+            const conversationId =
+                (rawMessages.length > 0 && rawMessages[0].conversation_id) ||
+                data.conversation_id ||
+                0;
+
             this.setState({ 
                 messages: formattedArrayMessages,
                 ledger_id: data.user_ledger_id,
+                conversation: conversationId || 0,
                 is_refreshing: false,
             });
+
+            if (conversationId) {
+                this.subscribeSocket(conversationId);
+            }
             
         } catch (error) {
             this.setState({
@@ -118,50 +152,43 @@ class DirectChatScreen extends Component {
      * @param {*} messages 
      */
     formatMessages (messages) {
-        const formattedArrayMessages = messages;
-        if (formattedArrayMessages.length > 0) {
-            this.setState({
-                conversation: formattedArrayMessages[0].conversation_id
-            })
-            const finalArrayMessages = [];
-            
-            for (let i = 0; i < formattedArrayMessages.length; i++) {
-                let quickReply = JSON.parse(formattedArrayMessages[i].response_quick_reply);
-                if((!!formattedArrayMessages[i].response_quick_reply && quickReply.answered == null)){
-                    
-                    finalArrayMessages.unshift({
-                        _id: formattedArrayMessages[i].id,
-                        createdAt: formattedArrayMessages[i].created_at,
-                        text: formattedArrayMessages[i].message,
-                        user: { _id: formattedArrayMessages[i].user_id },
-                        image: formattedArrayMessages[i].picture ? this.state.url + '/uploads/' + formattedArrayMessages[i].picture : null,
-                        quickReplies: {
-                            type: 'radio', // or 'checkbox',
-                            keepIt: true,
-                            values: quickReply.values,
-                            
-                        }
-                        
-                    });
-                } 
-                else {
-                    finalArrayMessages.unshift({
-                        _id: formattedArrayMessages[i].id,
-                        createdAt: formattedArrayMessages[i].created_at,
-                        text: formattedArrayMessages[i].message,
-                        user: { _id: formattedArrayMessages[i].user_id },
-                        image: formattedArrayMessages[i].picture ? this.state.url + '/uploads/' + formattedArrayMessages[i].picture : null                        
-                    });
-                }
-                
-
-            
-            }
-
-            return finalArrayMessages;
+        if (!messages || !Array.isArray(messages) || messages.length === 0) {
+            return [];
         }
 
-        return [];
+        const finalArrayMessages = [];
+
+        for (let i = 0; i < messages.length; i++) {
+            try {
+                const message = messages[i];
+                const baseMessage = {
+                    _id: message.id,
+                    createdAt: message.created_at,
+                    text: message.message,
+                    user: { _id: message.user_id },
+                    image: message.picture ? this.state.url + '/uploads/' + message.picture : null
+                };
+
+                const quickReply = parseQuickReply(message.response_quick_reply);
+
+                if (quickReply && quickReply.answered == null) {
+                    finalArrayMessages.unshift({
+                        ...baseMessage,
+                        quickReplies: {
+                            type: 'radio',
+                            keepIt: true,
+                            values: quickReply.values,
+                        }
+                    });
+                } else {
+                    finalArrayMessages.unshift(baseMessage);
+                }
+            } catch (error) {
+                console.log('DirectChatScreen formatMessages item Error:', error);
+            }
+        }
+
+        return finalArrayMessages;
     }
 
     async onQuickReply(quickReply) {
@@ -202,11 +229,12 @@ class DirectChatScreen extends Component {
                 messages[0].text
             )
     
-            if (!this.state.conversation) {
+            const conversationId = response.data && response.data.conversation_id;
+            if (!this.state.conversation && conversationId) {
                 this.setState({
-                    conversation: response.data.conversation_id
+                    conversation: conversationId
                 });
-                this.subscribeSocket();
+                this.subscribeSocket(conversationId);
             }
     
             this.setState(previousState => ({
@@ -220,16 +248,19 @@ class DirectChatScreen extends Component {
     /**
      * @description  subscribe scoket
      */
-    subscribeSocket() {
+    subscribeSocket(conversationId) {
+        const id = conversationId || this.state.conversation;
 
-        if (this.socket !== null && this.state.conversation) {
+        if (this.socket !== null && id) {
             console.log(
-                `Tentando se conectar no canal conversation.${this.state.conversation}`,
+                `Tentando se conectar no canal conversation.${id}`,
             );
 
             if (this._onNewMessage) {
                 this.socket.off('newMessage', this._onNewMessage);
             }
+
+            this._subscribedConversationId = id;
 
             this._onNewMessage = (channel, data) => {
                 console.log(
@@ -263,7 +294,7 @@ class DirectChatScreen extends Component {
 
             this.socket
             .emit('subscribe', {
-                channel: `conversation.${this.state.conversation}`,
+                channel: `conversation.${id}`,
             })
             .on('newMessage', this._onNewMessage)
         }

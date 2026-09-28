@@ -19,7 +19,7 @@ import {
     Time, 
     Day 
 } from 'react-native-gifted-chat';
-import { getMessageChat, seeMessage, sendMessage } from '../services/api';
+import { getConversation, getMessageChat, seeMessage, sendMessage } from '../services/api';
 import { withNavigation } from '@react-navigation/compat';
 import WebSocketServer from "../services/socket";
 import strings from '../lang/strings';
@@ -28,10 +28,18 @@ import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 const send = require('react-native-chat/src/img/send.png');
 var color = '#FBFBFB';
 
+function resolveRouteParams(props) {
+    const navParams = props.navigation && props.navigation.state && props.navigation.state.params;
+    if (navParams && Object.keys(navParams).length) {
+        return navParams;
+    }
+    return (props.route && props.route.params) || {};
+}
+
 class RideChatScreen extends Component {
     constructor(props) {
         super(props)
-        const paramRoute = this.props.navigation.state != undefined ? this.props.navigation.state.params : this.props.route.params;
+        const paramRoute = resolveRouteParams(this.props);
         this.state = {
             messages: [],
             idBotMessage: 1,
@@ -101,16 +109,51 @@ class RideChatScreen extends Component {
     
       }
 
+    async resolveConversationId() {
+        if (this.state.conversation_id) {
+            return this.state.conversation_id;
+        }
+
+        try {
+            const response = await getConversation(
+                this.state.url,
+                this.state.id,
+                this.state.token,
+                this.state.requestId,
+                this.state.is_customer_chat || 0
+            );
+            const conversation = response.data &&
+                response.data.conversations &&
+                response.data.conversations[0];
+
+            if (conversation && conversation.id) {
+                this.setState({
+                    conversation_id: conversation.id,
+                    receiveID: (conversation.user && conversation.user.id) || this.state.receiveID,
+                    userName: (conversation.user && conversation.user.name) || this.state.userName,
+                    userAvatar: (conversation.user && conversation.user.image) || this.state.userAvatar,
+                });
+                return conversation.id;
+            }
+        } catch (error) {
+            console.log('Erro resolveConversationId:', error);
+        }
+
+        return 0;
+    }
+
     async getConversation(refresh = false) {
         this.setState({ isLoading: true, is_refreshing: true })
+
+        const conversationId = await this.resolveConversationId();
         
-        if (this.state.conversation_id) {
+        if (conversationId) {
             try {
                 const response = await getMessageChat(
                     this.state.url,
                     this.state.id,
                     this.state.token,
-                    this.state.conversation_id
+                    conversationId
                 );
 
                 console.log('response chat messages: ', response)
@@ -118,14 +161,15 @@ class RideChatScreen extends Component {
 
                 if (!refresh) {
                     this.unsubscribeSocketNewConversation()
-                    this.subscribeSocket();//subscribe socket new conversation
+                    this.subscribeSocket(conversationId);
                 }
 
                 if (responseJson.success) {
-                    let formattedArrayMessages = responseJson.messages
+                    let formattedArrayMessages = responseJson.messages || []
                     this.setState({
                         userLedgeId: responseJson.user_ledger_id,
-                        requestId: responseJson.request_id
+                        requestId: responseJson.request_id || this.state.requestId,
+                        conversation_id: conversationId
                     })
                     if (formattedArrayMessages.length > 0) {
                         this.setState({ lastIdMessage: formattedArrayMessages[formattedArrayMessages.length - 1].id })
@@ -139,12 +183,12 @@ class RideChatScreen extends Component {
                             })
                         }
                         this.setState({ messages: finalArrayMessages })
+
+                        if (formattedArrayMessages[formattedArrayMessages.length - 1].is_seen == 0) {
+                            this.seeMessage()
+                        }
                     }
                     this.setState({ isLoading: false, is_refreshing: false })
-
-                    if (formattedArrayMessages[formattedArrayMessages.length - 1].is_seen == 0) {
-                        this.seeMessage()
-                    }
 
                 } else {
                     this.setState({ isLoading: false, is_refreshing: false  })
@@ -156,6 +200,7 @@ class RideChatScreen extends Component {
             
         } else {
             console.log('Nao tem conversa salva')
+            this.subscribeSocketNewConversation(this.state.requestId);
             this.setState({ isLoading: false, is_refreshing: false });
         }
     }
@@ -203,10 +248,12 @@ class RideChatScreen extends Component {
 
                 this._onNewConversation = (channel, data) => {
                     console.log('Evento socket newConversation disparado! ', channel, data)
+                    const conversationId = data.conversation_id;
                     this.setState({
-                        conversation_id: data.conversation_id
+                        conversation_id: conversationId
                     })
                     this.playSoundRequest();
+                    this.unsubscribeSocketNewConversation();
                     this.getConversation();
                 };
 
@@ -218,16 +265,19 @@ class RideChatScreen extends Component {
         }
     }
     
-    subscribeSocket() {
-        console.log('this.state.conversationId', this.state.conversation_id)
+    subscribeSocket(conversationId) {
+        const id = conversationId || this.state.conversation_id;
+        console.log('this.state.conversationId', id)
 
-        if (!this.socket || !this.state.conversation_id) {
+        if (!this.socket || !id) {
             return;
         }
 
         if (this._onNewMessage) {
             this.socket.off("newMessage", this._onNewMessage);
         }
+
+        this._subscribedConversationId = id;
 
         this._onNewMessage = (channel, data) => {
             console.log('Evento socket newMessage disparado! ', channel, data)
@@ -263,7 +313,7 @@ class RideChatScreen extends Component {
         };
 
         this.socket
-            .emit("subscribe", { channel: "conversation." + this.state.conversation_id })
+            .emit("subscribe", { channel: "conversation." + id })
             .on("newMessage", this._onNewMessage)
     }
 
@@ -273,11 +323,13 @@ class RideChatScreen extends Component {
                 this.socket.off("newMessage", this._onNewMessage);
                 this._onNewMessage = null;
             }
-            if (this.state.conversation_id) {
+            const conversationId = this._subscribedConversationId || this.state.conversation_id;
+            if (conversationId) {
                 this.socket.emit("unsubscribe", {
-                    channel: "conversation." + this.state.conversation_id
+                    channel: "conversation." + conversationId
                 })
             }
+            this._subscribedConversationId = null;
         }
     }
 
@@ -315,10 +367,12 @@ class RideChatScreen extends Component {
             if (responseJson.success) {
                 if (responseJson.conversation_id) {
                     if (this.state.conversation_id == null || this.state.conversation_id == 0) {
+                        const conversationId = responseJson.conversation_id;
                         this.setState({
-                            conversation_id: responseJson.conversation_id
+                            conversation_id: conversationId
                         });
                         this.unsubscribeSocketNewConversation()
+                        this.subscribeSocket(conversationId);
                         this.getConversation();
                     }
                 }

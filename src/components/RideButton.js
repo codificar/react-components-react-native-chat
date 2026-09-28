@@ -135,13 +135,17 @@ class RideButton extends Component {
 			const data = await this.callApiConversation();
             console.log('getConversation', data);
 
+            if (!data || !data.id) {
+                return;
+            }
+
             this.subscribeSocketConversation(data.id);
             
 			this.setState({
-                receiveID: data.user.id,
+                receiveID: data.user && data.user.id,
                 conversation_id: data.id,
-                userName: data.user.name,
-                userAvatar: data.user.image,
+                userName: data.user && data.user.name,
+                userAvatar: data.user && data.user.image,
                 contNewMensag: data.new_messages
 			})
 
@@ -161,14 +165,14 @@ class RideButton extends Component {
             );
 
             const { data } = response;
+            if (!data || !data.conversations || !data.conversations[0]) {
+                return null;
+            }
 
             return data.conversations[0];
         } catch (error) {
             console.log('Erro callApiConversation:', error);
-
-            return {
-                id: 0
-            }
+            return null;
         }
     }
 
@@ -184,18 +188,24 @@ class RideButton extends Component {
         let conversationId = this.state.conversation_id;
         let userName = this.state.userName;
         let userAvatar = this.state.userAvatar;
+        let receiveID = this.state.receiveID;
 
-        if (conversationId == 0) {
+        if (!conversationId) {
             const data = await this.callApiConversation(is_customer_chat);
-            conversationId = data.id;
-            userName = data.user.name;
-            userAvatar = data.user.image;
-            console.log('conversationId', conversationId);
+            if (data && data.id) {
+                conversationId = data.id;
+                userName = (data.user && data.user.name) || userName;
+                userAvatar = (data.user && data.user.image) || userAvatar;
+                receiveID = (data.user && data.user.id) || receiveID;
+                console.log('conversationId', conversationId);
+            } else {
+                conversationId = 0;
+            }
         }
 
         this.props.navigation.navigate('RideChatScreen', {
-            receiveID: this.state.receiveID,
-            conversation_id: conversationId,
+            receiveID: receiveID,
+            conversation_id: conversationId || 0,
             url: this.props.url,
             socket_url: this.props.socket_url,
             id: this.props.id,
