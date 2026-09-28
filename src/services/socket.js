@@ -5,6 +5,12 @@ export default (WebSocketServer = {
   socket: null,
   interval: null,
   connect(url) {
+    if (this.socket) {
+      if (this.socket.disconnected && this.socket.connect) {
+        this.socket.connect();
+      }
+      return this.socket;
+    }
 
     this.socket = io.connect(
       url,

@@ -36,11 +36,6 @@ class RideButton extends Component {
             await this.getConversation();
             this.subscribeSocketNewConversation(this.props.request_id);
         });
-
-        this.blurListener = this.props.navigation.addListener("blur", () => {
-            this.unsubscribeSocket();
-            this.unsubscribeSocketNewConversation();
-        });
     }
 
     componentDidMount() {
@@ -51,7 +46,6 @@ class RideButton extends Component {
     componentWillUnmount() {
         try {
             this.focusListener && this.focusListener();
-            this.blurListener && this.blurListener();
             this.unsubscribeSocket();
             this.unsubscribeSocketNewConversation();
         } catch (error) {
@@ -61,45 +55,67 @@ class RideButton extends Component {
 
     subscribeSocketConversation(id) {
 		console.log('subscribeSocketConversation', id)
+        if (!this.socket || !id) {
+            return;
+        }
+
+        if (this._onConversationNewMessage) {
+            this.socket.off("newMessage", this._onConversationNewMessage);
+        }
+
+        this._onConversationNewMessage = (channel, data) => {
+            this.playSoundRequest();
+            this.setState({
+                contNewMensag: this.state.contNewMensag + 1
+            });
+        };
+
 		this.socket
 			.emit("subscribe", { channel: "conversation." + id })
-			.on("newMessage", (channel, data) => {
-
-				this.playSoundRequest();
-                this.setState({
-                    contNewMensag: this.state.contNewMensag + 1
-                });
-			})
+			.on("newMessage", this._onConversationNewMessage)
 	}
 
     subscribeSocketNewConversation(id_request) {
 		console.log('subscribeSocketNewConversation')
 		try {
+            if (!this.socket || !id_request) {
+                return;
+            }
+
+            if (this._onNewConversation) {
+                this.socket.off("newConversation", this._onNewConversation);
+            }
+
+            this._onNewConversation = (channel, data) => {
+                this.setState({
+                    conversation_id: data.conversation_id,
+                    contNewMensag: 1
+                });
+                this.playSoundRequest()
+                console.log('Evento socket newConversation disparado! ', channel, data)
+            };
+
 			this.socket.emit("subscribe", { channel: "request." + id_request })
-				.on("newConversation", (channel, data) => {
-                    this.setState({
-                        conversation_id: data.conversation_id,
-                        contNewMensag: 1
-                    });
-					this.playSoundRequest()
-					console.log('Evento socket newConversation disparado! ', channel, data)
-				})
+				.on("newConversation", this._onNewConversation)
 		} catch (error) {
 			console.log('Erro subscribeSocketNewConversation:', error)
 		}
     }
 
     unsubscribeSocketNewConversation() {
-        this.socket.removeAllListeners("newConversation");
+        if (this.socket && this._onNewConversation) {
+            this.socket.off("newConversation", this._onNewConversation);
+            this._onNewConversation = null;
+        }
     }
 
     unsubscribeSocket() {
         if (this.socket != null) {
+            if (this._onConversationNewMessage) {
+                this.socket.off("newMessage", this._onConversationNewMessage);
+                this._onConversationNewMessage = null;
+            }
             if (this.state.conversation_id) {
-                this.socket.removeAllListeners("newConversation")
-                this.socket.removeAllListeners("newMessage")
-                this.socket.removeAllListeners("readMessage")
-                this.socket.removeAllListeners("newConversation")
                 this.socket.emit("unsubscribe", {
                     channel: "conversation." + this.state.conversation_id
                 })

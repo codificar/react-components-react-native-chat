@@ -193,15 +193,25 @@ class RideChatScreen extends Component {
         console.log('subscribeSocketNewConversation:', id_request)
         try {
             if (!this.state.conversation_id || this.state.conversation_id == 0) {
-                this.socket.emit("subscribe", { channel: "request." + id_request })
-                    .on("newConversation", (channel, data) => {
-                        console.log('Evento socket newConversation disparado! ', channel, data)
-                        this.setState({
-                            conversation_id: data.conversation_id
-                        })
-                        this.playSoundRequest();
-                        this.getConversation();
+                if (!this.socket || !id_request) {
+                    return;
+                }
+
+                if (this._onNewConversation) {
+                    this.socket.off("newConversation", this._onNewConversation);
+                }
+
+                this._onNewConversation = (channel, data) => {
+                    console.log('Evento socket newConversation disparado! ', channel, data)
+                    this.setState({
+                        conversation_id: data.conversation_id
                     })
+                    this.playSoundRequest();
+                    this.getConversation();
+                };
+
+                this.socket.emit("subscribe", { channel: "request." + id_request })
+                    .on("newConversation", this._onNewConversation)
             }
         } catch (error) {
             console.log('Erro subscribeSocketNewConversation:', error)
@@ -211,48 +221,59 @@ class RideChatScreen extends Component {
     subscribeSocket() {
         console.log('this.state.conversationId', this.state.conversation_id)
 
+        if (!this.socket || !this.state.conversation_id) {
+            return;
+        }
+
+        if (this._onNewMessage) {
+            this.socket.off("newMessage", this._onNewMessage);
+        }
+
+        this._onNewMessage = (channel, data) => {
+            console.log('Evento socket newMessage disparado! ', channel, data)
+
+            let newMessage = {
+                _id: data.message.id,
+                createdAt: data.message.created_at,
+                text: data.message.message,
+                sent: true,
+                received: false,
+                user: { _id: data.message.user_id }
+            }
+            console.log('newMessage: ', newMessage);
+
+            this.setState(state => {
+                const lastMessage = state.messages[state.messages.length - 1];
+                if (
+                    (!lastMessage || newMessage._id !== lastMessage._id) &&
+                    data.message.user_id !== this.state.userLedgeId
+                ) {
+                    return {
+                        messages: GiftedChat.append(state.messages, newMessage),
+                    };
+                }
+                return null;
+            });
+
+            this.setState({ lastIdMessage: data.message.id });
+            if (data.message.is_seen == 0 && data.message.user_id !== this.state.userLedgeId) {
+                this.playSoundRequest();
+                this.seeMessage();
+            }
+        };
+
         this.socket
             .emit("subscribe", { channel: "conversation." + this.state.conversation_id })
-            .on("newMessage", (channel, data) => {
-
-                console.log('Evento socket newMessage disparado! ', channel, data)
-
-                let newMessage = {
-                    _id: data.message.id,
-                    createdAt: data.message.created_at,
-                    text: data.message.message,
-                    sent: true,
-                    received: false,
-                    user: { _id: data.message.user_id }
-                }
-                console.log('newMessage: ', newMessage);
-
-                this.setState(state => {
-                    if (
-                        newMessage._id !==
-                        state.messages[state.messages.length - 1]._id &&
-                        data.message.user_id !== this.state.userLedgeId
-                    ) {
-                        return {
-                            messages: GiftedChat.append(state.messages, newMessage),
-                        };
-                    }
-                });
-
-                this.setState({ lastIdMessage: data.message.id });
-                if (data.message.is_seen == 0 && data.message.user_id !== this.state.userLedgeId) {
-                    this.playSoundRequest();
-                    this.seeMessage();
-                }
-            })
+            .on("newMessage", this._onNewMessage)
     }
 
     unsubscribeSocket() {
         if (this.socket != null) {
+            if (this._onNewMessage) {
+                this.socket.off("newMessage", this._onNewMessage);
+                this._onNewMessage = null;
+            }
             if (this.state.conversation_id) {
-                this.socket.removeAllListeners("newConversation")
-                this.socket.removeAllListeners("newMessage")
-                this.socket.removeAllListeners("readMessage")
                 this.socket.emit("unsubscribe", {
                     channel: "conversation." + this.state.conversation_id
                 })
@@ -261,7 +282,10 @@ class RideChatScreen extends Component {
     }
 
     unsubscribeSocketNewConversation() {
-        this.socket.removeAllListeners("newConversation");
+        if (this.socket && this._onNewConversation) {
+            this.socket.off("newConversation", this._onNewConversation);
+            this._onNewConversation = null;
+        }
     }
 
     /**

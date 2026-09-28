@@ -67,12 +67,12 @@ class DirectChatScreen extends Component {
 
     unsubscribeSocket() {
         if (this.socket != null) {
+            if (this._onNewMessage) {
+                this.socket.off("newMessage", this._onNewMessage);
+                this._onNewMessage = null;
+            }
             if (this.state.conversation) {
                 console.log('qweqwe', "conversation." + this.state.conversation);
-                this.socket.removeAllListeners("newConversation")
-                this.socket.removeAllListeners("newMessage")
-                this.socket.removeAllListeners("readMessage")
-                this.socket.removeAllListeners("newConversation")
                 this.socket.emit("unsubscribe", {
                     channel: "conversation." + this.state.conversation
                 })
@@ -222,16 +222,16 @@ class DirectChatScreen extends Component {
      */
     subscribeSocket() {
 
-        if (this.socket !== null && this.state.conversation !== null) {
+        if (this.socket !== null && this.state.conversation) {
             console.log(
                 `Tentando se conectar no canal conversation.${this.state.conversation}`,
             );
 
-            this.socket
-            .emit('subscribe', {
-                channel: `conversation.${this.state.conversation}`,
-            })
-            .on('newMessage', (channel, data) => {
+            if (this._onNewMessage) {
+                this.socket.off('newMessage', this._onNewMessage);
+            }
+
+            this._onNewMessage = (channel, data) => {
                 console.log(
                     '===========Evento socket newMessage disparado! ',
                     channel,
@@ -248,17 +248,24 @@ class DirectChatScreen extends Component {
                 };
 
                 this.setState(state => {
+                    const lastMessage = state.messages[state.messages.length - 1];
                     if (
-                        newMessage._id !==
-                        state.messages[state.messages.length - 1]._id &&
+                        (!lastMessage || newMessage._id !== lastMessage._id) &&
                         data.message.user_id !== this.state.ledger_id
                     ) {
                         return {
                             messages: GiftedChat.append(state.messages, newMessage),
                         };
                     }
+                    return null;
                 });
+            };
+
+            this.socket
+            .emit('subscribe', {
+                channel: `conversation.${this.state.conversation}`,
             })
+            .on('newMessage', this._onNewMessage)
         }
     }
 
