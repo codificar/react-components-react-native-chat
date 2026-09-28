@@ -14,10 +14,18 @@ import strings from '../lang/strings';
 
 const send = require('react-native-chat/src/img/send.png');
 
+function resolveRouteParams(props) {
+    const navParams = props.navigation && props.navigation.state && props.navigation.state.params;
+    if (navParams && Object.keys(navParams).length) {
+        return navParams;
+    }
+    return (props.route && props.route.params) || {};
+}
+
 class HelpChatScreen extends Component {
     constructor(props) {
         super(props);
-        const paramRoute = this.props.navigation.state != undefined ? this.props.navigation.state.params : this.props.route.params;
+        const paramRoute = resolveRouteParams(this.props);
 
         this.state = {
             url: paramRoute.url,
@@ -33,7 +41,6 @@ class HelpChatScreen extends Component {
         this.socket = WebSocketServer.connect(paramRoute.socket_url);
 
         this.willBlur = this.props.navigation.addListener("blur", () => {
-            
             this.unsubscribeSocket();
         })
     }
@@ -45,7 +52,6 @@ class HelpChatScreen extends Component {
         });
 
         await this.getMessages();
-        this.subscribeSocket();
     }
 
     componentWillUnmount() {
@@ -65,12 +71,13 @@ class HelpChatScreen extends Component {
                 this.socket.off("newMessage", this._onNewMessage);
                 this._onNewMessage = null;
             }
-            if (this.state.conversation) {
-                console.log('qweqwe', "conversation." + this.state.conversation);
+            const conversationId = this._subscribedConversationId || this.state.conversation;
+            if (conversationId) {
                 this.socket.emit("unsubscribe", {
-                    channel: "conversation." + this.state.conversation
+                    channel: "conversation." + conversationId
                 })
             }
+            this._subscribedConversationId = null;
         }
     }
 
@@ -87,11 +94,12 @@ class HelpChatScreen extends Component {
             this.state.request_id
         );
 
-        if (!this.state.conversation) {
+        const conversationId = response.data && response.data.conversation_id;
+        if (!this.state.conversation && conversationId) {
             this.setState({
-                conversation: response.data.conversation_id
+                conversation: conversationId
             });
-            this.subscribeSocket();
+            this.subscribeSocket(conversationId);
         }
 
         this.setState(previousState => ({
@@ -118,14 +126,24 @@ class HelpChatScreen extends Component {
                 this.state.request_id
             );
     
-            const { data } = response; console.log(data);
-            const formattedArrayMessages = this.formatMessages(data.messages);
-    
+            const { data } = response;
+            const rawMessages = data.messages || [];
+            const formattedArrayMessages = this.formatMessages(rawMessages);
+            const conversationId =
+                (rawMessages.length > 0 && rawMessages[0].conversation_id) ||
+                data.conversation_id ||
+                null;
+
             this.setState({ 
                 messages: formattedArrayMessages,
                 ledger_id: data.user_ledger_id,
+                conversation: conversationId,
                 is_refreshing: false
             });
+
+            if (conversationId) {
+                this.subscribeSocket(conversationId);
+            }
             
         } catch (error) {
             this.setState({
@@ -140,41 +158,43 @@ class HelpChatScreen extends Component {
      * @param {*} messages 
      */
     formatMessages (messages) {
-        const formattedArrayMessages = messages;
-
-        if (formattedArrayMessages.length > 0) {
-            this.setState({
-                conversation: formattedArrayMessages[0].conversation_id
-            })
-            const finalArrayMessages = [];
-            for (let i = 0; i < formattedArrayMessages.length; i++) {
-                finalArrayMessages.unshift({
-                    _id: formattedArrayMessages[i].id,
-                    createdAt: formattedArrayMessages[i].created_at,
-                    text: formattedArrayMessages[i].message,
-                    user: { _id: formattedArrayMessages[i].user_id },
-                });
-            }
-
-            return finalArrayMessages;
+        if (!messages || !Array.isArray(messages) || messages.length === 0) {
+            return [];
         }
 
-        return [];
+        const finalArrayMessages = [];
+        for (let i = 0; i < messages.length; i++) {
+            try {
+                finalArrayMessages.unshift({
+                    _id: messages[i].id,
+                    createdAt: messages[i].created_at,
+                    text: messages[i].message,
+                    user: { _id: messages[i].user_id },
+                });
+            } catch (error) {
+                console.log('HelpChatScreen formatMessages item Error:', error);
+            }
+        }
+
+        return finalArrayMessages;
     }
 
     /**
      * @description  subscribe scoket
      */
-    subscribeSocket() {
+    subscribeSocket(conversationId) {
+        const id = conversationId || this.state.conversation;
 
-        if (this.socket !== null && this.state.conversation) {
+        if (this.socket !== null && id) {
             console.log(
-                `Tentando se conectar no canal conversation.${this.state.conversation}`,
+                `Tentando se conectar no canal conversation.${id}`,
             );
 
             if (this._onNewMessage) {
                 this.socket.off('newMessage', this._onNewMessage);
             }
+
+            this._subscribedConversationId = id;
 
             this._onNewMessage = (channel, data) => {
                 console.log(
@@ -208,7 +228,7 @@ class HelpChatScreen extends Component {
 
             this.socket
             .emit('subscribe', {
-                channel: `conversation.${this.state.conversation}`,
+                channel: `conversation.${id}`,
             })
             .on('newMessage', this._onNewMessage)
         }
