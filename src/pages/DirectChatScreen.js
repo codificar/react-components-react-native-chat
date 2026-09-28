@@ -14,6 +14,7 @@ import strings from '../lang/strings';
 import QuickReplies from 'react-native-gifted-chat/lib/QuickReplies';
 
 const send = require('react-native-chat/src/img/send.png');
+const CONVERSATION_POLL_MS = 3000;
 
 function resolveRouteParams(props) {
     const navParams = props.navigation && props.navigation.state && props.navigation.state.params;
@@ -41,10 +42,21 @@ function parseQuickReply(raw) {
     return null;
 }
 
+function resolveConversationId(rawMessages, data, fallback) {
+    if (rawMessages && rawMessages.length > 0 && rawMessages[0].conversation_id) {
+        return rawMessages[0].conversation_id;
+    }
+    if (data && data.conversation_id) {
+        return data.conversation_id;
+    }
+    return fallback || 0;
+}
+
 class DirectChatScreen extends Component {
     constructor(props) {
         super(props);
         const paramRoute = resolveRouteParams(this.props);
+        const initialConversation = paramRoute.conversation_id || 0;
 
         this.state = {
             url: paramRoute.url,
@@ -52,22 +64,25 @@ class DirectChatScreen extends Component {
             token: paramRoute.token,
             receiver: paramRoute.receiver,
             messages: [],
-            conversation: 0,
+            conversation: initialConversation,
             ledger_id: 0,
             is_refreshing: false,
         }
 
+        this._pollTimer = null;
         this.socket = WebSocketServer.connect(paramRoute.socket_url);
 
         this.willBlur = this.props.navigation.addListener("blur", () => {
+            this.stopConversationPolling();
             this.unsubscribeSocket();
         })
 
         this.willFocus = this.props.navigation.addListener("focus", async () => {
+            if (this.state.conversation) {
+                this.subscribeSocket(this.state.conversation);
+            }
             await this.getMessages();
         });
-
-        this.getMessages();
     }
 
     componentDidMount() {
@@ -75,16 +90,42 @@ class DirectChatScreen extends Component {
             this.props.navigation.goBack();
             return true;
         });
+
+        if (this.state.conversation) {
+            this.subscribeSocket(this.state.conversation);
+        }
     }
 
     componentWillUnmount() {
         try {
+            this.stopConversationPolling();
             this.backHandler && this.backHandler.remove();
             this.willBlur && this.willBlur();
             this.willFocus && this.willFocus();
             this.unsubscribeSocket();
         } catch (error) {
             console.log('DirectChatScreen componentWillUnmount Error:', error);
+        }
+    }
+
+    startConversationPolling() {
+        if (this._pollTimer) {
+            return;
+        }
+
+        this._pollTimer = setInterval(() => {
+            if (this.state.conversation) {
+                this.stopConversationPolling();
+                return;
+            }
+            this.getMessages({ silent: true });
+        }, CONVERSATION_POLL_MS);
+    }
+
+    stopConversationPolling() {
+        if (this._pollTimer) {
+            clearInterval(this._pollTimer);
+            this._pollTimer = null;
         }
     }
 
@@ -106,10 +147,13 @@ class DirectChatScreen extends Component {
      * Get messages
      * @param {String} messages
      */
-    async getMessages() {
-        this.setState({
-            is_refreshing: true
-        });
+    async getMessages(options = {}) {
+        const silent = !!(options && options.silent);
+        if (!silent) {
+            this.setState({
+                is_refreshing: true
+            });
+        }
         try {
             const response = await getMessageDirectChat(
                 this.state.url,
@@ -121,10 +165,11 @@ class DirectChatScreen extends Component {
             const { data } = response;
             const rawMessages = data.messages || [];
             const formattedArrayMessages = this.formatMessages(rawMessages);
-            const conversationId =
-                (rawMessages.length > 0 && rawMessages[0].conversation_id) ||
-                data.conversation_id ||
-                0;
+            const conversationId = resolveConversationId(
+                rawMessages,
+                data,
+                this.state.conversation
+            );
 
             this.setState({ 
                 messages: formattedArrayMessages,
@@ -134,7 +179,10 @@ class DirectChatScreen extends Component {
             });
 
             if (conversationId) {
+                this.stopConversationPolling();
                 this.subscribeSocket(conversationId);
+            } else {
+                this.startConversationPolling();
             }
             
         } catch (error) {
@@ -228,7 +276,8 @@ class DirectChatScreen extends Component {
             )
     
             const conversationId = response.data && response.data.conversation_id;
-            if (!this.state.conversation && conversationId) {
+            if (conversationId) {
+                this.stopConversationPolling();
                 this.setState({
                     conversation: conversationId
                 });

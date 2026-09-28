@@ -14,6 +14,7 @@ import { listDirectConversations } from '../services/api';
 import Toolbar from '../components/ToolBar';
 import strings from '../lang/strings';
 import PerfilImage from '../components/PerfilImage';
+import WebSocketServer from '../services/socket';
 
 const box_img = require('react-native-chat/src/img/box.png');
 
@@ -36,9 +37,16 @@ class ListDirectsScreen extends Component {
             is_refreshing: false
         }
 
-        /*this.willFocus = this.props.navigation.addListener("willFocus", () => {
+        this._subscribedChannels = [];
+        this.socket = WebSocketServer.connect(paramRoute.socket_url);
+
+        this.willFocus = this.props.navigation.addListener("focus", () => {
             this.listDirectConversations();
-        });*/
+        });
+
+        this.willBlur = this.props.navigation.addListener("blur", () => {
+            this.unsubscribeConversationSockets();
+        });
     }
 
     componentDidMount() {
@@ -46,13 +54,87 @@ class ListDirectsScreen extends Component {
             this.props.navigation.goBack();
             return true;
         });
-
-        this.listDirectConversations();
     }
 
     componentWillUnmount() {
-		this.backHandler.remove();
-	}
+        try {
+            this.backHandler && this.backHandler.remove();
+            this.willFocus && this.willFocus();
+            this.willBlur && this.willBlur();
+            this.unsubscribeConversationSockets();
+        } catch (error) {
+            console.log('ListDirectsScreen componentWillUnmount Error:', error);
+        }
+    }
+
+    unsubscribeConversationSockets() {
+        if (this._onNewMessage && this.socket) {
+            this.socket.off('newMessage', this._onNewMessage);
+            this._onNewMessage = null;
+        }
+
+        (this._subscribedChannels || []).forEach((channel) => {
+            WebSocketServer.unsubscribeChannel(channel);
+        });
+        this._subscribedChannels = [];
+    }
+
+    subscribeConversationSockets(conversations) {
+        this.unsubscribeConversationSockets();
+
+        if (!this.socket || !conversations || !conversations.length) {
+            return;
+        }
+
+        this._onNewMessage = (channel, data) => {
+            if (!data || !data.message) {
+                return;
+            }
+
+            const message = data.message;
+            const conversationId = message.conversation_id;
+            if (!conversationId) {
+                return;
+            }
+
+            const preview =
+                message.message ||
+                (message.picture ? '[imagem]' : '');
+
+            this.setState((state) => {
+                const conversations = (state.conversations || []).map((item) => {
+                    if (String(item.conversation_id) !== String(conversationId)) {
+                        return item;
+                    }
+
+                    return {
+                        ...item,
+                        last_message: preview || item.last_message,
+                        time: message.created_at || item.time,
+                    };
+                });
+
+                return { conversations };
+            });
+        };
+
+        this.socket.on('newMessage', this._onNewMessage);
+
+        const channels = [];
+        conversations.forEach((item) => {
+            if (!item.conversation_id) {
+                return;
+            }
+            const channel = 'conversation.' + item.conversation_id;
+            if (channels.indexOf(channel) !== -1) {
+                return;
+            }
+            channels.push(channel);
+            WebSocketServer.subscribeChannel(channel);
+        });
+
+        this._subscribedChannels = channels;
+    }
 
     async listDirectConversations() {
         this.setState({
@@ -67,10 +149,12 @@ class ListDirectsScreen extends Component {
             );
 
             const { data } = response;
+            const conversations = data.conversations || [];
             this.setState({
                 is_refreshing: false,
-                conversations: data.conversations
+                conversations
             });
+            this.subscribeConversationSockets(conversations);
         } catch (error) {
             this.setState({
                 is_refreshing: false
@@ -86,7 +170,8 @@ class ListDirectsScreen extends Component {
                     socket_url: this.state.socket_url,
                     id: this.state.id,
                     token: this.state.token,
-                    receiver: item.id
+                    receiver: item.id,
+                    conversation_id: item.conversation_id
             })
         else
             this.props.navigation.navigate('RideChatScreen', {

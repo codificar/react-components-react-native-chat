@@ -93,7 +93,7 @@ class HelpChatScreen extends Component {
         );
 
         const conversationId = response.data && response.data.conversation_id;
-        if (!this.state.conversation && conversationId) {
+        if (conversationId) {
             this.setState({
                 conversation: conversationId
             });
